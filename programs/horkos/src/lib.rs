@@ -9,7 +9,7 @@ pub use constants::*;
 pub use instructions::*;
 pub use state::*;
 
-declare_id!("8aYmwr4ypua4cmwfRUZQ72JHEm4qpUUTRUPgTDCh5RU3");
+declare_id!("Ct38Fh3x5S9yifjbTxMBjNjAhkL6o35X111WKiUBUMKf");
 
 #[program]
 pub mod horkos {
