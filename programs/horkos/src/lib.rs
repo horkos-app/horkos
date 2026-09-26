@@ -12,7 +12,7 @@ pub use state::*;
 declare_id!("4Y55LTgKQPYsy9pTqXYUupeRrogBDG83LwJTmWEkggfh");
 
 #[program]
-pub mod onchain_program {
+pub mod horkos {
     use super::*;
 
     pub fn initialize(ctx: Context<Initialize>) -> Result<()> {

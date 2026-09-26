@@ -7,7 +7,7 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-onchain_program = "4Y55LTgKQPYsy9pTqXYUupeRrogBDG83LwJTmWEkggfh"
+horkos = "4Y55LTgKQPYsy9pTqXYUupeRrogBDG83LwJTmWEkggfh"
 
 [provider]
 cluster = "localnet"

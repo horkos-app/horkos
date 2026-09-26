@@ -14,25 +14,25 @@ use {
 
 #[test]
 fn test_initialize() {
-    let program_id = onchain_program::id();
+    let program_id = horkos::id();
     let payer = Keypair::new();
     let counter = Pubkey::find_program_address(
-        &[onchain_program::constants::COUNTER_SEED],
+        &[horkos::constants::COUNTER_SEED],
         &program_id,
     )
     .0;
     let mut svm = LiteSVM::new();
     let bytes = include_bytes!(concat!(
         env!("CARGO_TARGET_TMPDIR"),
-        "/../deploy/onchain_program.so"
+        "/../deploy/horkos.so"
     ));
     svm.add_program(program_id, bytes).unwrap();
     svm.airdrop(&payer.pubkey(), 1_000_000_000).unwrap();
 
     let instruction = Instruction::new_with_bytes(
         program_id,
-        &onchain_program::instruction::Initialize {}.data(),
-        onchain_program::accounts::Initialize {
+        &horkos::instruction::Initialize {}.data(),
+        horkos::accounts::Initialize {
             payer: payer.pubkey(),
             counter,
             system_program: system_program::ID,
@@ -49,14 +49,14 @@ fn test_initialize() {
 
     let counter_account = svm.get_account(&counter).unwrap();
     let mut data: &[u8] = &counter_account.data;
-    let counter_state = onchain_program::state::Counter::try_deserialize(&mut data).unwrap();
+    let counter_state = horkos::state::Counter::try_deserialize(&mut data).unwrap();
     assert_eq!(counter_state.count, 0);
     assert_eq!(counter_state.authority, payer.pubkey());
 
     let instruction = Instruction::new_with_bytes(
         program_id,
-        &onchain_program::instruction::Increment {}.data(),
-        onchain_program::accounts::Increment {
+        &horkos::instruction::Increment {}.data(),
+        horkos::accounts::Increment {
             counter,
             authority: payer.pubkey(),
         }
@@ -72,7 +72,7 @@ fn test_initialize() {
 
     let counter_account = svm.get_account(&counter).unwrap();
     let mut data: &[u8] = &counter_account.data;
-    let counter_state = onchain_program::state::Counter::try_deserialize(&mut data).unwrap();
+    let counter_state = horkos::state::Counter::try_deserialize(&mut data).unwrap();
     assert_eq!(counter_state.count, 1);
     assert_eq!(counter_state.authority, payer.pubkey());
 }
