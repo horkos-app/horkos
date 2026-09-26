@@ -76,9 +76,12 @@ pub fn handle_renew(ctx: Context<Renew>) -> Result<()> {
     let license = &mut ctx.accounts.license;
     let start = license.expires_at.max(now);
     license.paid = license_type.price_lamports;
-    license.resign_deadline = now
-        .checked_add(license_type.resign_window_secs)
-        .ok_or(ErrorCode::Overflow)?;
+    license.resign_deadline = if license.resigned {
+        now
+    } else {
+        now.checked_add(license_type.resign_window_secs)
+            .ok_or(ErrorCode::Overflow)?
+    };
     license.prev_expires_at = start;
     license.expires_at = start
         .checked_add(license_type.duration_secs)

@@ -5,6 +5,7 @@ use anchor_lang::prelude::*;
 pub struct Config {
     pub master: Pubkey,
     pub fee_bps: u16,
+    pub issuer_fee_lamports: u64,
     pub bump: u8,
 }
 
@@ -37,5 +38,6 @@ pub struct License {
     pub resign_deadline: i64,
     pub prev_expires_at: i64,
     pub expires_at: i64,
+    pub resigned: bool,
     pub bump: u8,
 }
