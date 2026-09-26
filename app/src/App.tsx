@@ -6,6 +6,7 @@ import type { Ctx, Role, Screen, TxSpec } from "./ctx";
 import { short, sol } from "./format";
 import { useMeta } from "./meta";
 import { Buyer, Connect, Issuer, Master } from "./screens";
+import { DevDocs, ForIssuers, HowItWorks, PAGES, type Page } from "./screens/Info";
 import { Icon, Seg, TxModal, type TxView } from "./ui";
 
 const NAV: Record<Role, { k: Screen; label: string; icon: string }[]> = {
@@ -31,6 +32,20 @@ const ROLE_OPTS: { v: Role; l: string; icon: string }[] = [
 ];
 
 const nowSec = () => Math.floor(Date.now() / 1000);
+const readPage = (): Page | null => PAGES.find((p) => "#" + p.k === window.location.hash)?.k ?? null;
+
+function usePage() {
+  const [page, setPage] = useState(readPage);
+  useEffect(() => {
+    const on = () => {
+      setPage(readPage());
+      window.scrollTo(0, 0);
+    };
+    window.addEventListener("hashchange", on);
+    return () => window.removeEventListener("hashchange", on);
+  }, []);
+  return page;
+}
 
 export default function App() {
   const { connection } = useConnection();
@@ -38,6 +53,7 @@ export default function App() {
   const anchorWallet = useAnchorWallet();
   const program = useMemo(() => makeProgram(connection, anchorWallet), [connection, anchorWallet]);
   const meta = useMeta();
+  const page = usePage();
 
   const [chain, setChain] = useState<ChainState | null>(null);
   const [loadErr, setLoadErr] = useState<string | null>(null);
@@ -121,8 +137,24 @@ export default function App() {
 
   if (!connected || !me) {
     return (
-      <Shell>
-        <Connect />
+      <Shell
+        right={
+          <>
+            <nav style={{ display: "flex", alignItems: "center", gap: "var(--space-8)" }}>
+              {PAGES.map((p) => (
+                <a key={p.k} href={"#" + p.k} style={page === p.k ? { color: "var(--color-text)", textDecoration: "underline", textDecorationColor: "var(--color-accent)", textUnderlineOffset: 6 } : { textDecoration: "none" }}>
+                  {p.label}
+                </a>
+              ))}
+            </nav>
+            <button className="btn btn-secondary">
+              <Icon n="seal-check" />
+              Verify a license
+            </button>
+          </>
+        }
+      >
+        {page === "how" ? <HowItWorks /> : page === "issuers" ? <ForIssuers /> : page === "docs" ? <DevDocs /> : <Connect />}
       </Shell>
     );
   }
@@ -257,13 +289,13 @@ function Shell({ right, children }: { right?: ReactNode; children: ReactNode }) 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "radial-gradient(1200px 500px at 0% -10%, var(--color-accent-900), transparent 70%), var(--color-bg)" }}>
       <header className="nav" style={{ padding: "var(--space-4) var(--space-8)", gap: "var(--space-6)" }}>
-        <div className="nav-brand" style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
+        <a href="#" className="nav-brand" style={{ display: "flex", alignItems: "center", gap: "var(--space-3)", color: "var(--color-text)", textDecoration: "none" }}>
           <span style={{ width: 26, height: 26, borderRadius: "var(--radius-md)", border: "1px solid var(--color-accent)", display: "grid", placeItems: "center", color: "var(--color-accent)" }}>
             <Icon n="key" size={15} />
           </span>
           <span>Horkos</span>
           <span className="tag tag-neutral" style={{ fontSize: 10, textTransform: "capitalize" }}>{CLUSTER.replace("-beta", "")}</span>
-        </div>
+        </a>
         {right}
       </header>
       {children}

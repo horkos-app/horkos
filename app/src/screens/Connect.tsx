@@ -51,7 +51,7 @@ export function Connect() {
         </div>
       </div>
       <div style={{ position: "relative", display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
-        <div className="card elev-md" style={{ padding: "var(--space-6)", gap: "var(--space-4)", transform: "rotate(-2deg) translateX(24px)", opacity: 0.55 }}>
+        <div className="card elev-md" style={{ padding: "var(--space-6)", gap: "var(--space-4)", transform: "rotate(-2deg) translateX(24px)", opacity: 0.55, width: "92%", minHeight: 172 }}>
           <div style={{ display: "flex", justifyContent: "space-between" }}>
             <span className="card-kicker">Northbeam Software</span>
             <span className="tag tag-neutral">Expired</span>
@@ -59,7 +59,7 @@ export function Connect() {
           <div className="card-title">Northbeam Sync</div>
           <div style={{ height: 6, borderRadius: 3, background: "var(--color-neutral-800)" }} />
         </div>
-        <div className="card elev-lg" style={{ padding: "var(--space-8)", gap: "var(--space-4)" }}>
+        <div className="card elev-lg" style={{ padding: "var(--space-8)", gap: "var(--space-4)", minHeight: 330 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span className="card-kicker">Arcwise Labs</span>
             <span className="tag tag-accent">Refundable · 8 days</span>
@@ -82,8 +82,8 @@ export function Connect() {
           </div>
         </div>
         <div className="text-muted" style={{ display: "flex", gap: "var(--space-8)", fontSize: 12, padding: "0 var(--space-2)" }}>
-          <span style={{ display: "flex", alignItems: "center", gap: 6 }}><Icon n="arrow-counter-clockwise" />Refund window on every license</span>
-          <span style={{ display: "flex", alignItems: "center", gap: 6 }}><Icon n="magnifying-glass" />Free on-chain verification</span>
+          <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 15 }}><Icon n="arrow-counter-clockwise" />Refund window on every license</span>
+          <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 15 }}><Icon n="magnifying-glass" />Free on-chain verification</span>
         </div>
       </div>
     </main>
