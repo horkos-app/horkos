@@ -301,9 +301,7 @@ function Shell({ right, children }: { right?: ReactNode; children: ReactNode }) 
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "radial-gradient(1200px 500px at 0% -10%, var(--color-accent-900), transparent 70%), var(--color-bg)" }}>
       <header className="nav" style={{ padding: "var(--space-4) var(--space-8)", gap: "var(--space-6)" }}>
         <a href="#" className="nav-brand" style={{ display: "flex", alignItems: "center", gap: "var(--space-3)", color: "var(--color-text)", textDecoration: "none" }}>
-          <span style={{ width: 26, height: 26, borderRadius: "var(--radius-md)", border: "1px solid var(--color-accent)", display: "grid", placeItems: "center", color: "var(--color-accent)" }}>
-            <Icon n="key" size={15} />
-          </span>
+          <img src="/logo.svg" alt="" width={26} height={26} />
           <span>Horkos</span>
           <span className="tag tag-neutral" style={{ fontSize: 10, textTransform: "capitalize" }}>{CLUSTER.replace("-beta", "")}</span>
         </a>
