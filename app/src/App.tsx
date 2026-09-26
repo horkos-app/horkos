@@ -144,19 +144,13 @@ export default function App() {
     return (
       <Shell
         right={
-          <>
-            <nav style={{ display: "flex", alignItems: "center", gap: "var(--space-8)" }}>
-              {PAGES.map((p) => (
-                <a key={p.k} href={"#" + p.k} style={page === p.k ? { color: "var(--color-text)", textDecoration: "underline", textDecorationColor: "var(--color-accent)", textUnderlineOffset: 6 } : { textDecoration: "none" }}>
-                  {p.label}
-                </a>
-              ))}
-            </nav>
-            <button className="btn btn-secondary">
-              <Icon n="seal-check" />
-              Verify a license
-            </button>
-          </>
+          <nav style={{ display: "flex", alignItems: "center", gap: "var(--space-8)" }}>
+            {PAGES.map((p) => (
+              <a key={p.k} href={"#" + p.k} style={page === p.k ? { color: "var(--color-text)", textDecoration: "underline", textDecorationColor: "var(--color-accent)", textUnderlineOffset: 6 } : { textDecoration: "none" }}>
+                {p.label}
+              </a>
+            ))}
+          </nav>
         }
       >
         {page === "how" ? <HowItWorks /> : page === "issuers" ? <ForIssuers /> : page === "docs" ? <DevDocs /> : <Connect />}
