@@ -110,9 +110,8 @@ export async function fetchFeeEvents(connection: Connection, cfg: Cfg): Promise<
   for (let i = 0; i < todo.length; i += 5) {
     if (i) await new Promise((r) => setTimeout(r, 600));
     const batch = todo.slice(i, i + 5);
-    const txs = await connection.getTransactions(
-      batch.map((s) => s.signature),
-      { maxSupportedTransactionVersion: 0, commitment: COMMITMENT },
+    const txs = await Promise.all(
+      batch.map((s) => connection.getTransaction(s.signature, { maxSupportedTransactionVersion: 0, commitment: COMMITMENT })),
     );
     txs.forEach((tx, k) => {
       if (!tx?.meta) return;
