@@ -152,7 +152,7 @@ export function ForIssuers() {
           <thead><tr><th>Setting</th><th>Editable after creation</th><th>Notes</th></tr></thead>
           <tbody>
             <tr><td>Price</td><td><span className="tag tag-accent">Yes</span></td><td className="text-muted">Applies to new purchases and renewals only.</td></tr>
-            <tr><td>On sale</td><td><span className="tag tag-accent">Yes</span></td><td className="text-muted">Pausing blocks new purchases and renewals. Existing licenses keep working.</td></tr>
+            <tr><td>Available</td><td><span className="tag tag-accent">Yes</span></td><td className="text-muted">Pausing blocks new purchases and renewals. Existing licenses keep working.</td></tr>
             <tr><td>Name &amp; description</td><td><span className="tag tag-neutral">Off-chain</span></td><td className="text-muted">Stored in the app, not in the program.</td></tr>
             <tr><td>Duration &amp; refund window</td><td><span className="tag tag-neutral">Fixed</span></td><td className="text-muted">Locked in the app once a type exists, so buyers see stable terms.</td></tr>
           </tbody>

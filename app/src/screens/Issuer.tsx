@@ -71,7 +71,7 @@ export function Types({ ctx }: { ctx: Ctx }) {
           return (
             <div key={t.pda.toBase58()} className="card elev-sm" style={{ padding: "var(--space-6)", gap: "var(--space-4)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span className={"tag " + (t.active ? "tag-accent" : "tag-neutral")}>{t.active ? "On sale" : "Paused"}</span>
+                <span className={"tag " + (t.active ? "tag-accent" : "tag-neutral")}>{t.active ? "Available" : "Paused"}</span>
                 <span className="text-muted" style={{ fontSize: 12 }}>{ls.length} active accounts</span>
               </div>
               <div>
@@ -213,7 +213,7 @@ export function Editor({ ctx }: { ctx: Ctx }) {
           {editing && (
             <div className="field">
               <label>Availability</label>
-              <Seg name="active" value={f.active ? 1 : 0} opts={[{ v: 1, l: "On sale", icon: "storefront" }, { v: 0, l: "Paused", icon: "pause" }]} onPick={(v) => set({ active: v === 1 })} />
+              <Seg name="active" value={f.active ? 1 : 0} opts={[{ v: 1, l: "Available", icon: "storefront" }, { v: 0, l: "Paused", icon: "pause" }]} onPick={(v) => set({ active: v === 1 })} />
             </div>
           )}
           <div style={{ display: "flex", gap: "var(--space-3)" }}>
