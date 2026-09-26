@@ -140,7 +140,7 @@ export function ForIssuers() {
         <Steps
           items={[
             { title: "Buy issuer access", body: "Connect your wallet and click Become issuer. You pay a one-time issuer fee, set by the operator of this deployment, plus the account rent." },
-            { title: "Create a license type", body: "Set a name, price in SOL, duration (a day, a month, a year or custom) and a resignation period in days. You pay a one-time rent deposit for the account." },
+            { title: "Create a license type", body: "Set a name, price in SOL, duration (a day, a month, a year, indefinite or custom) and a resignation period in days. You pay a one-time rent deposit for the account." },
             { title: "Ship the check", body: "Derive the buyer's license address in your app and read its expiry. See the developer docs for a copy-paste snippet." },
             { title: "Claim your proceeds", body: "Open Payouts to see what's claimable now and what's still locked in refund windows. Renewals settle the previous payment automatically." },
           ]}

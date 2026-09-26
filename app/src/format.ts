@@ -9,11 +9,16 @@ export const short = (k: PublicKey | string) => {
   return s.slice(0, 4) + "…" + s.slice(-4);
 };
 
+export const INDEFINITE = 365_000 * DAY;
+export const isIndefinite = (unix: number) => unix - Date.now() / 1000 > INDEFINITE / 2;
+
 export const dt = (unix: number, year = true) =>
-  new Date(unix * 1000).toLocaleDateString(
-    "en-US",
-    year ? { month: "short", day: "numeric", year: "numeric" } : { month: "short", day: "numeric" },
-  );
+  isIndefinite(unix)
+    ? "Indefinite"
+    : new Date(unix * 1000).toLocaleDateString(
+        "en-US",
+        year ? { month: "short", day: "numeric", year: "numeric" } : { month: "short", day: "numeric" },
+      );
 
 const plural = (v: number, unit: string) => {
   const r = Math.round(v * 10) / 10;
@@ -29,7 +34,7 @@ export const span = (secs: number) => {
 };
 
 export const period = (secs: number) =>
-  secs === 365 * DAY ? "1 year" : secs === 30 * DAY ? "month" : secs === DAY ? "day" : span(secs);
+  secs >= INDEFINITE ? "indefinite" : secs === 365 * DAY ? "1 year" : secs === 30 * DAY ? "month" : secs === DAY ? "day" : span(secs);
 
 export const initials = (label: string) =>
   label

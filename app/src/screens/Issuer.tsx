@@ -3,7 +3,7 @@ import { BN } from "@anchor-lang/core";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { configPda, DAY, issuerPda, NETWORK_FEE, typePda, type LicenseAcc } from "../chain";
 import type { Ctx } from "../ctx";
-import { dt, period, short, sol, span } from "../format";
+import { dt, INDEFINITE, period, short, sol, span } from "../format";
 import { Dialog, Icon, PageHead, Seg } from "../ui";
 
 const bytes = (s: string) => new TextEncoder().encode(s).length;
@@ -104,7 +104,7 @@ export function Types({ ctx }: { ctx: Ctx }) {
   );
 }
 
-const DURS = [1, 30, 90, 365];
+const DURS = [1, 30, 90, 365, INDEFINITE / DAY];
 const toLamports = (s: string) => Math.round(parseFloat(s) * LAMPORTS_PER_SOL);
 const trimNum = (v: number) => String(Math.round(v * 1e6) / 1e6);
 

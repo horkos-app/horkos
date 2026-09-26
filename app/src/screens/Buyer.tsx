@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { configPda, DAY, explorerAddr, licensePda, NETWORK_FEE, type LicenseAcc, type TypeAcc } from "../chain";
 import type { Ctx } from "../ctx";
-import { dt, period, short, sol, span } from "../format";
+import { dt, isIndefinite, period, short, sol, span } from "../format";
 import { Bar, Dialog, Icon, PageHead, Seg, Stat } from "../ui";
 
 function buy(ctx: Ctx, t: TypeAcc) {
@@ -201,7 +201,7 @@ export function Mine({ ctx }: { ctx: Ctx }) {
   });
 
   const gMin = Math.min(now - 30 * DAY, ...items.map((x) => x.start));
-  const gMax = Math.max(now + 60 * DAY, ...items.map((x) => x.l.expiresAt));
+  const gMax = Math.max(now + 60 * DAY, ...items.filter((x) => !isIndefinite(x.l.expiresAt)).map((x) => x.l.expiresAt));
   const gR = gMax - gMin;
   const gp = (v: number) => ((v - gMin) / gR) * 100;
   const ticks = [0.1, 0.5, 0.9].map((p) => {
@@ -297,7 +297,7 @@ export function Mine({ ctx }: { ctx: Ctx }) {
                   style={{
                     position: "absolute",
                     left: gp(x.start) + "%",
-                    width: ((x.l.expiresAt - x.start) / gR) * 100 + "%",
+                    width: ((Math.min(x.l.expiresAt, gMax) - x.start) / gR) * 100 + "%",
                     top: 4,
                     height: 14,
                     borderRadius: "var(--radius-sm)",
