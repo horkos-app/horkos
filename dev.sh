@@ -15,4 +15,4 @@ solana program deploy -u devnet --program-id target/deploy/horkos-keypair.json t
 
 cd app
 [ -d node_modules ] || npm install
-VITE_RPC_URL=https://api.devnet.solana.com VITE_CLUSTER=devnet npm run dev
+RPC_URL="https://devnet.helius-rpc.com/?api-key=$1" VITE_RPC_URL=/rpc VITE_CLUSTER=devnet npm run dev

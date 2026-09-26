@@ -82,7 +82,7 @@ export default function App() {
   useEffect(() => {
     if (!connected) return;
     refresh();
-    const t = setInterval(refresh, 30_000);
+    const t = setInterval(refresh, 120_000);
     const c = setInterval(() => setNow(nowSec()), 15_000);
     return () => {
       clearInterval(t);

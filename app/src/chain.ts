@@ -11,7 +11,9 @@ import {
 import idl from "../../target/idl/horkos.json";
 import type { Horkos } from "../../target/types/horkos";
 
-export const RPC_URL: string = import.meta.env.VITE_RPC_URL ?? "http://127.0.0.1:8899";
+const RAW_RPC: string = import.meta.env.VITE_RPC_URL ?? "http://127.0.0.1:8899";
+export const RPC_URL = new URL(RAW_RPC, location.origin).href;
+export const WS_URL = RAW_RPC.startsWith("/") ? RPC_URL.replace(/^http/, "ws") : undefined;
 export const CLUSTER: string =
   import.meta.env.VITE_CLUSTER ??
   (RPC_URL.includes("devnet") ? "devnet" : RPC_URL.includes("mainnet") ? "mainnet-beta" : "localnet");
