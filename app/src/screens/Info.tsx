@@ -147,14 +147,17 @@ export function ForIssuers() {
         />
       </Section>
 
-      <Section title="Terms at a glance">
+      <Section title="Terms at a glance" sub="Everything below is stored on-chain in your license type account. Changes never touch what a buyer already paid for.">
         <table className="table">
-          <thead><tr><th>Setting</th><th>Editable after creation</th><th>Notes</th></tr></thead>
+          <thead><tr><th>Setting</th><th>Rules</th><th>Can change</th><th>Effect on licenses already sold</th></tr></thead>
           <tbody>
-            <tr><td>Price</td><td><span className="tag tag-accent">Yes</span></td><td className="text-muted">Applies to new purchases and renewals only.</td></tr>
-            <tr><td>Available</td><td><span className="tag tag-accent">Yes</span></td><td className="text-muted">Pausing blocks new purchases and renewals. Existing licenses keep working.</td></tr>
-            <tr><td>Name &amp; description</td><td><span className="tag tag-neutral">Off-chain</span></td><td className="text-muted">Stored in the app, not in the program.</td></tr>
-            <tr><td>Duration &amp; refund window</td><td><span className="tag tag-neutral">Fixed</span></td><td className="text-muted">Locked in the app once a type exists, so buyers see stable terms.</td></tr>
+            <tr><td>Name</td><td className="text-muted">Up to 64 bytes</td><td><span className="tag tag-accent">Anytime</span></td><td className="text-muted">Shown everywhere immediately.</td></tr>
+            <tr><td>Description</td><td className="text-muted">Up to 256 bytes</td><td><span className="tag tag-accent">Anytime</span></td><td className="text-muted">Shown everywhere immediately.</td></tr>
+            <tr><td>Price</td><td className="text-muted">Any amount of SOL above zero</td><td><span className="tag tag-accent">Anytime</span></td><td className="text-muted">None until the owner renews, then they pay the new price.</td></tr>
+            <tr><td>Duration</td><td className="text-muted">A day, 30 days, 90 days, a year or indefinite (1000 years)</td><td><span className="tag tag-accent">Anytime</span></td><td className="text-muted">Current expiry stays. The next renewal adds the new duration.</td></tr>
+            <tr><td>Refund window</td><td className="text-muted">0 days (no refunds) up to the full duration</td><td><span className="tag tag-accent">Anytime</span></td><td className="text-muted">Open windows keep their deadline. The next renewal uses the new window.</td></tr>
+            <tr><td>Available / Paused</td><td className="text-muted">Paused types are hidden from Browse</td><td><span className="tag tag-accent">Anytime</span></td><td className="text-muted">Licenses keep working until they expire, but can't be renewed while paused. You can still claim payouts.</td></tr>
+            <tr><td>Issuer name</td><td className="text-muted">Up to 64 bytes</td><td><span className="tag tag-neutral">Never</span></td><td className="text-muted">Set once when you become an issuer.</td></tr>
           </tbody>
         </table>
       </Section>
