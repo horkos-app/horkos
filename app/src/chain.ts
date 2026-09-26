@@ -102,17 +102,21 @@ export async function fetchChain(program: HorkosProgram): Promise<ChainState> {
 
 export type FeeEvent = { sig: string; time: number; kind: "Claim" | "Renewal"; types: string[]; fee: number; amount: number };
 
+const feeCache = new Map<string, FeeEvent | null>();
+
 export async function fetchFeeEvents(connection: Connection, cfg: Cfg): Promise<FeeEvent[]> {
   const sigs = (await connection.getSignaturesForAddress(cfg.master, { limit: 300 }, COMMITMENT)).filter((s) => !s.err);
-  const out: FeeEvent[] = [];
-  for (let i = 0; i < sigs.length; i += 50) {
-    const batch = sigs.slice(i, i + 50);
+  const todo = sigs.filter((s) => !feeCache.has(s.signature));
+  for (let i = 0; i < todo.length; i += 5) {
+    if (i) await new Promise((r) => setTimeout(r, 600));
+    const batch = todo.slice(i, i + 5);
     const txs = await connection.getTransactions(
       batch.map((s) => s.signature),
       { maxSupportedTransactionVersion: 0, commitment: COMMITMENT },
     );
     txs.forEach((tx, k) => {
       if (!tx?.meta) return;
+      feeCache.set(batch[k].signature, null);
       const keys = tx.transaction.message.getAccountKeys({ accountKeysFromLookups: tx.meta.loadedAddresses ?? undefined });
       const all = [...Array(keys.length).keys()].map((j) => keys.get(j)!);
       const mi = all.findIndex((key) => key.equals(cfg.master));
@@ -127,7 +131,7 @@ export async function fetchFeeEvents(connection: Connection, cfg: Cfg): Promise<
       tx.transaction.message.compiledInstructions.forEach((ix) => {
         if (all[ix.programIdIndex]?.equals(PROGRAM_ID) && ix.accountKeyIndexes.length > typeIdx) types.add(all[ix.accountKeyIndexes[typeIdx]].toBase58());
       });
-      out.push({
+      feeCache.set(batch[k].signature, {
         sig: batch[k].signature,
         time: tx.blockTime ?? batch[k].blockTime ?? 0,
         kind,
@@ -137,7 +141,10 @@ export async function fetchFeeEvents(connection: Connection, cfg: Cfg): Promise<
       });
     });
   }
-  return out.sort((a, b) => b.time - a.time);
+  return sigs
+    .map((s) => feeCache.get(s.signature))
+    .filter((e): e is FeeEvent => !!e)
+    .sort((a, b) => b.time - a.time);
 }
 
 export class TxError extends Error {
