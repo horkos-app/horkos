@@ -1,5 +1,19 @@
-pub mod initialize;
-pub mod increment;
+pub mod claim;
+pub mod create_license_type;
+pub mod grant_issuer;
+pub mod init_config;
+pub mod purchase;
+pub mod renew;
+pub mod resign;
+pub mod update_issuer;
+pub mod update_license_type;
 
-pub use initialize::*;
-pub use increment::*;
+pub use claim::*;
+pub use create_license_type::*;
+pub use grant_issuer::*;
+pub use init_config::*;
+pub use purchase::*;
+pub use renew::*;
+pub use resign::*;
+pub use update_issuer::*;
+pub use update_license_type::*;
