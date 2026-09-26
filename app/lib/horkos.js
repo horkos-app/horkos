@@ -3,7 +3,7 @@ import { Connection, PublicKey, SystemProgram, Transaction, TransactionInstructi
 
 export const CLUSTER = process.env.NEXT_PUBLIC_CLUSTER ?? 'localnet'
 export const RPC = process.env.NEXT_PUBLIC_RPC_URL ?? (CLUSTER === 'localnet' ? 'http://127.0.0.1:8899' : clusterApiUrl(CLUSTER))
-export const PROGRAM_ID = new PublicKey(process.env.NEXT_PUBLIC_PROGRAM_ID ?? '8aYmwr4ypua4cmwfRUZQ72JHEm4qpUUTRUPgTDCh5RU3')
+export const PROGRAM_ID = new PublicKey(process.env.NEXT_PUBLIC_PROGRAM_ID ?? '4Y55LTgKQPYsy9pTqXYUupeRrogBDG83LwJTmWEkggfh')
 export const conn = new Connection(RPC, 'confirmed')
 export const EMPTY = { Config: [], Issuer: [], LicenseType: [], License: [] }
 
