@@ -7,7 +7,7 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-horkos = "4Y55LTgKQPYsy9pTqXYUupeRrogBDG83LwJTmWEkggfh"
+horkos = "8aYmwr4ypua4cmwfRUZQ72JHEm4qpUUTRUPgTDCh5RU3"
 
 [provider]
 cluster = "localnet"
