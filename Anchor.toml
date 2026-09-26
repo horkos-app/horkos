@@ -9,6 +9,9 @@ skip-lint = false
 [programs.localnet]
 horkos = "Ct38Fh3x5S9yifjbTxMBjNjAhkL6o35X111WKiUBUMKf"
 
+[programs.devnet]
+horkos = "Ct38Fh3x5S9yifjbTxMBjNjAhkL6o35X111WKiUBUMKf"
+
 [provider]
 cluster = "localnet"
 wallet = "~/.config/solana/id.json"

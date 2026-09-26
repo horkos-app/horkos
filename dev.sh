@@ -2,18 +2,17 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-mkdir -p .anchor
 [ -f ~/.config/solana/id.json ] || solana-keygen new --no-bip39-passphrase --silent -o ~/.config/solana/id.json
 
-solana-test-validator --reset --quiet --ledger .anchor/test-ledger &
-VALIDATOR=$!
-trap 'kill $VALIDATOR 2>/dev/null' EXIT
-
-until solana cluster-version -u localhost >/dev/null 2>&1; do sleep 0.5; done
+BALANCE=$(solana balance -u devnet | cut -d' ' -f1)
+if awk "BEGIN{exit !($BALANCE < 3)}"; then
+  solana airdrop 2 -u devnet || echo "airdrop failed, fund $(solana address) at https://faucet.solana.com"
+  exit
+fi
 
 anchor build
-anchor deploy --provider.cluster localnet
+solana program deploy -u devnet --program-id target/deploy/horkos-keypair.json target/deploy/horkos.so
 
 cd app
 [ -d node_modules ] || npm install
-npm run dev
+VITE_RPC_URL=https://api.devnet.solana.com VITE_CLUSTER=devnet npm run dev
