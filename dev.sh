@@ -2,6 +2,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
+mkdir -p .anchor
 [ -f ~/.config/solana/id.json ] || solana-keygen new --no-bip39-passphrase --silent -o ~/.config/solana/id.json
 
 solana-test-validator --reset --quiet --ledger .anchor/test-ledger &
