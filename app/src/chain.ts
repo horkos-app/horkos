@@ -1,4 +1,4 @@
-import { AnchorProvider, BN, Program } from "@anchor-lang/core";
+import { AnchorProvider, BN, EventParser, Program } from "@anchor-lang/core";
 import type { AnchorWallet } from "@solana/wallet-adapter-react";
 import {
   Connection,
@@ -104,7 +104,9 @@ export type FeeEvent = { sig: string; time: number; kind: "Claim" | "Renewal"; t
 
 const feeCache = new Map<string, FeeEvent | null>();
 
-export async function fetchFeeEvents(connection: Connection, cfg: Cfg): Promise<FeeEvent[]> {
+export async function fetchFeeEvents(program: HorkosProgram): Promise<FeeEvent[]> {
+  const connection = program.provider.connection;
+  const parser = new EventParser(PROGRAM_ID, program.coder);
   const sigs = (await connection.getSignaturesForAddress(configPda(), { limit: 100 }, COMMITMENT)).filter((s) => !s.err);
   const todo = sigs.filter((s) => !feeCache.has(s.signature));
   for (let i = 0; i < todo.length; i += 5) {
@@ -116,27 +118,18 @@ export async function fetchFeeEvents(connection: Connection, cfg: Cfg): Promise<
     txs.forEach((tx, k) => {
       if (!tx?.meta) return;
       feeCache.set(batch[k].signature, null);
-      const keys = tx.transaction.message.getAccountKeys({ accountKeysFromLookups: tx.meta.loadedAddresses ?? undefined });
-      const all = [...Array(keys.length).keys()].map((j) => keys.get(j)!);
-      const mi = all.findIndex((key) => key.equals(cfg.master));
-      if (mi <= 0) return;
-      const fee = tx.meta.postBalances[mi] - tx.meta.preBalances[mi];
-      if (fee <= 0) return;
       const logs = tx.meta.logMessages ?? [];
-      const kind = logs.includes("Program log: Instruction: Renew") ? "Renewal" : logs.includes("Program log: Instruction: Claim") ? "Claim" : null;
-      if (!kind) return;
-      const typeIdx = kind === "Renewal" ? 5 : 4;
-      const types = new Set<string>();
-      tx.transaction.message.compiledInstructions.forEach((ix) => {
-        if (all[ix.programIdIndex]?.equals(PROGRAM_ID) && ix.accountKeyIndexes.length > typeIdx) types.add(all[ix.accountKeyIndexes[typeIdx]].toBase58());
-      });
+      const paid = [...parser.parseLogs(logs)]
+        .filter((e) => e.name === "feePaid")
+        .map((e) => e.data as { licenseType: PublicKey; amount: BN; fee: BN });
+      if (!paid.length) return;
       feeCache.set(batch[k].signature, {
         sig: batch[k].signature,
         time: tx.blockTime ?? batch[k].blockTime ?? 0,
-        kind,
-        types: [...types],
-        fee,
-        amount: Math.round((fee * 10_000) / cfg.feeBps),
+        kind: logs.includes("Program log: Instruction: Renew") ? "Renewal" : "Claim",
+        types: [...new Set(paid.map((p) => p.licenseType.toBase58()))],
+        fee: paid.reduce((a, p) => a + n(p.fee), 0),
+        amount: paid.reduce((a, p) => a + n(p.amount), 0),
       });
     });
   }

@@ -141,16 +141,15 @@ export function Fees({ ctx }: { ctx: Ctx }) {
   const cfg = ctx.chain.cfg!;
   const [events, setEvents] = useState<FeeEvent[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const conn = ctx.program.provider.connection;
   useEffect(() => {
     let live = true;
-    fetchFeeEvents(conn, cfg)
+    fetchFeeEvents(ctx.program)
       .then((e) => live && setEvents(e))
       .catch((e) => live && setErr(String(e?.message ?? e)));
     return () => {
       live = false;
     };
-  }, [conn, cfg, ctx.chain]);
+  }, [ctx.program, ctx.chain]);
 
   const pending = Math.floor((ctx.chain.licenses.reduce((a, l) => a + l.paid, 0) * cfg.feeBps) / 10_000);
   const ev = events ?? [];

@@ -49,3 +49,11 @@ pub struct License {
     pub resigned: bool,
     pub bump: u8,
 }
+
+#[event]
+pub struct FeePaid {
+    pub license: Pubkey,
+    pub license_type: Pubkey,
+    pub amount: u64,
+    pub fee: u64,
+}

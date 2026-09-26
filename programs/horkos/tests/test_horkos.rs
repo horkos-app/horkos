@@ -540,6 +540,15 @@ fn resign_rejects_closed_window() {
 }
 
 #[test]
+fn claim_emits_fee_event() {
+    let mut env = Env::with_type();
+    ok(env.purchase());
+    env.warp(WINDOW + 1);
+    let logs = env.claim().unwrap().logs;
+    assert!(logs.iter().any(|l| l.starts_with("Program data: ")));
+}
+
+#[test]
 fn claim_pays_issuer_and_master() {
     let mut env = Env::with_type();
     ok(env.purchase());

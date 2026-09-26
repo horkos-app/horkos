@@ -3,7 +3,7 @@ use anchor_lang::prelude::*;
 use crate::{
     constants::*,
     error::ErrorCode,
-    state::{Config, Issuer, License, LicenseType},
+    state::{Config, FeePaid, Issuer, License, LicenseType},
 };
 
 #[derive(Accounts)]
@@ -64,5 +64,11 @@ pub(crate) fn pay_out<'info>(
     authority.add_lamports(net)?;
     master.add_lamports(fee)?;
     license.paid = 0;
+    emit!(FeePaid {
+        license: license.key(),
+        license_type: license.license_type,
+        amount: paid,
+        fee,
+    });
     Ok(())
 }
