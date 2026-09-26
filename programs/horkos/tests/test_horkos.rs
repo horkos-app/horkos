@@ -73,7 +73,7 @@ impl Env {
 
     fn with_type() -> Self {
         let mut env = Self::new();
-        ok(env.grant(None));
+        ok(env.buy_issuer(None));
         ok(env.create_type(DURATION, WINDOW));
         env
     }
@@ -127,15 +127,24 @@ impl Env {
         send(&mut self.svm, ix::InitConfig {}, accounts, &self.master)
     }
 
-    fn grant(&mut self, by: Option<&Keypair>) -> TransactionResult {
+    fn update_config(&mut self, by: Option<&Keypair>, issuer_fee_lamports: u64) -> TransactionResult {
         let by = by.unwrap_or(&self.master);
-        let accounts = acc::GrantIssuer {
+        let accounts = acc::UpdateConfig {
             master: by.pubkey(),
+            config: config_pda(),
+        };
+        send(&mut self.svm, ix::UpdateConfig { issuer_fee_lamports }, accounts, by)
+    }
+
+    fn buy_issuer(&mut self, master: Option<Pubkey>) -> TransactionResult {
+        let accounts = acc::PurchaseIssuer {
+            authority: self.issuer.pubkey(),
+            master: master.unwrap_or(self.master.pubkey()),
             config: config_pda(),
             issuer: self.issuer_pda(),
             system_program: system_program::ID,
         };
-        send(&mut self.svm, ix::GrantIssuer { wallet: self.issuer.pubkey() }, accounts, by)
+        send(&mut self.svm, ix::PurchaseIssuer {}, accounts, &self.issuer)
     }
 
     fn update_issuer(&mut self, by: Option<&Keypair>, active: bool) -> TransactionResult {
@@ -244,29 +253,58 @@ fn init_config_sets_master_and_fee() {
     let config: Config = env.read(config_pda());
     assert_eq!(config.master, env.master.pubkey());
     assert_eq!(config.fee_bps, FEE_BPS);
+    assert_eq!(config.issuer_fee_lamports, ISSUER_FEE_LAMPORTS);
     assert!(env.init_config().is_err());
 }
 
 #[test]
-fn grant_issuer_activates_issuer() {
+fn update_config_changes_issuer_fee() {
     let mut env = Env::new();
-    ok(env.grant(None));
+    ok(env.update_config(None, 2 * ISSUER_FEE_LAMPORTS));
+    assert_eq!(env.read::<Config>(config_pda()).issuer_fee_lamports, 2 * ISSUER_FEE_LAMPORTS);
+    let master_before = env.lamports(env.master.pubkey());
+    ok(env.buy_issuer(None));
+    assert_eq!(env.lamports(env.master.pubkey()) - master_before, 2 * ISSUER_FEE_LAMPORTS);
+}
+
+#[test]
+fn update_config_rejects_non_master() {
+    let mut env = Env::new();
+    let stranger = env.stranger();
+    fails(env.update_config(Some(&stranger), 0), "Unauthorized");
+}
+
+#[test]
+fn purchase_issuer_pays_master_and_activates() {
+    let mut env = Env::new();
+    let master_before = env.lamports(env.master.pubkey());
+    ok(env.buy_issuer(None));
+    assert_eq!(env.lamports(env.master.pubkey()) - master_before, ISSUER_FEE_LAMPORTS);
     let issuer: Issuer = env.read(env.issuer_pda());
     assert_eq!(issuer.authority, env.issuer.pubkey());
     assert!(issuer.active);
 }
 
 #[test]
-fn grant_issuer_rejects_non_master() {
+fn purchase_issuer_rejects_wrong_master() {
     let mut env = Env::new();
     let stranger = env.stranger();
-    fails(env.grant(Some(&stranger)), "Unauthorized");
+    fails(env.buy_issuer(Some(stranger.pubkey())), "Unauthorized");
+}
+
+#[test]
+fn purchase_issuer_rejects_repurchase_after_deactivation() {
+    let mut env = Env::new();
+    ok(env.buy_issuer(None));
+    ok(env.update_issuer(None, false));
+    fails(env.buy_issuer(None), "already in use");
+    assert!(!env.read::<Issuer>(env.issuer_pda()).active);
 }
 
 #[test]
 fn update_issuer_toggles_active() {
     let mut env = Env::new();
-    ok(env.grant(None));
+    ok(env.buy_issuer(None));
     ok(env.update_issuer(None, false));
     assert!(!env.read::<Issuer>(env.issuer_pda()).active);
     ok(env.update_issuer(None, true));
@@ -276,7 +314,7 @@ fn update_issuer_toggles_active() {
 #[test]
 fn update_issuer_rejects_non_master() {
     let mut env = Env::new();
-    ok(env.grant(None));
+    ok(env.buy_issuer(None));
     let stranger = env.stranger();
     fails(env.update_issuer(Some(&stranger), false), "Unauthorized");
 }
@@ -296,7 +334,7 @@ fn create_license_type_stores_fields() {
 #[test]
 fn create_license_type_rejects_bad_params() {
     let mut env = Env::new();
-    ok(env.grant(None));
+    ok(env.buy_issuer(None));
     fails(env.create_type(WINDOW, DURATION), "InvalidParams");
     fails(env.create_type(0, 0), "InvalidParams");
 }
@@ -304,7 +342,7 @@ fn create_license_type_rejects_bad_params() {
 #[test]
 fn create_license_type_rejects_inactive_issuer() {
     let mut env = Env::new();
-    ok(env.grant(None));
+    ok(env.buy_issuer(None));
     ok(env.update_issuer(None, false));
     fails(env.create_type(DURATION, WINDOW), "IssuerInactive");
 }
@@ -345,6 +383,7 @@ fn purchase_escrows_price() {
     assert_eq!(license.resign_deadline, now + WINDOW);
     assert_eq!(license.prev_expires_at, now);
     assert_eq!(license.expires_at, now + DURATION);
+    assert!(!license.resigned);
     assert_eq!(env.lamports(env.license_pda()), env.license_rent() + PRICE);
 }
 
@@ -400,13 +439,59 @@ fn renew_rejects_inactive_license_type() {
 }
 
 #[test]
-fn resign_closes_first_license() {
+fn resign_first_license_refunds_and_keeps_account() {
     let mut env = Env::with_type();
     ok(env.purchase());
+    let first: License = env.read(env.license_pda());
     let buyer_before = env.lamports(env.buyer.pubkey());
+
     ok(env.resign());
-    assert_eq!(env.lamports(env.license_pda()), 0);
-    assert!(env.lamports(env.buyer.pubkey()) > buyer_before + PRICE);
+
+    assert!(env.lamports(env.buyer.pubkey()) > buyer_before + PRICE - 10_000);
+    let license: License = env.read(env.license_pda());
+    assert_eq!(license.paid, 0);
+    assert!(license.resigned);
+    assert_eq!(license.expires_at, first.prev_expires_at);
+    assert_eq!(license.resign_deadline, env.now());
+    assert_eq!(env.lamports(env.license_pda()), env.license_rent());
+}
+
+#[test]
+fn resign_blocks_repurchase() {
+    let mut env = Env::with_type();
+    ok(env.purchase());
+    ok(env.resign());
+    env.warp(1);
+    fails(env.purchase(), "already in use");
+}
+
+#[test]
+fn resign_rejects_second_resign() {
+    let mut env = Env::with_type();
+    ok(env.purchase());
+    ok(env.resign());
+    fails(env.resign(), "ResignWindowClosed");
+}
+
+#[test]
+fn renew_after_resign_has_no_window() {
+    let mut env = Env::with_type();
+    ok(env.purchase());
+    ok(env.resign());
+    fails(env.renew(), "ResignWindowOpen");
+    env.warp(1);
+
+    ok(env.renew());
+
+    let now = env.now();
+    let license: License = env.read(env.license_pda());
+    assert!(license.resigned);
+    assert_eq!(license.paid, PRICE);
+    assert_eq!(license.resign_deadline, now);
+    assert_eq!(license.expires_at, now + DURATION);
+    fails(env.resign(), "ResignWindowClosed");
+    env.warp(1);
+    ok(env.claim());
 }
 
 #[test]
@@ -421,6 +506,7 @@ fn resign_after_renew_refunds_and_rolls_back() {
 
     let license: License = env.read(env.license_pda());
     assert_eq!(license.paid, 0);
+    assert!(license.resigned);
     assert_eq!(license.expires_at, first.expires_at);
     assert_eq!(license.resign_deadline, env.now());
     assert_eq!(env.lamports(env.license_pda()), env.license_rent());

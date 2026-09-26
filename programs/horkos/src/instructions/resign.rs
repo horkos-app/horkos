@@ -27,19 +27,19 @@ pub struct Resign<'info> {
 
 pub fn handle_resign(ctx: Context<Resign>) -> Result<()> {
     let now = Clock::get()?.unix_timestamp;
-    let license = &mut ctx.accounts.license;
-    require!(now <= license.resign_deadline, ErrorCode::ResignWindowClosed);
-    require!(license.paid > 0, ErrorCode::NothingToClaim);
-
     let owner = ctx.accounts.owner.to_account_info();
-    if license.prev_expires_at <= now {
-        return license.close(owner);
-    }
+    let license = &mut ctx.accounts.license;
+    require!(
+        !license.resigned && now <= license.resign_deadline,
+        ErrorCode::ResignWindowClosed
+    );
+    require!(license.paid > 0, ErrorCode::NothingToClaim);
 
     let refund = license.paid;
     license.sub_lamports(refund)?;
     owner.add_lamports(refund)?;
     license.paid = 0;
+    license.resigned = true;
     license.expires_at = license.prev_expires_at;
     license.resign_deadline = now;
     Ok(())

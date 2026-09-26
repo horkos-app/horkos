@@ -14,3 +14,6 @@ pub const LICENSE_SEED: &[u8] = b"license";
 
 #[constant]
 pub const FEE_BPS: u16 = 10;
+
+#[constant]
+pub const ISSUER_FEE_LAMPORTS: u64 = 1_000_000_000;

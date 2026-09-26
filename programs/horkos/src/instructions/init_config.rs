@@ -21,6 +21,7 @@ pub fn handle_init_config(ctx: Context<InitConfig>) -> Result<()> {
     let config = &mut ctx.accounts.config;
     config.master = ctx.accounts.master.key();
     config.fee_bps = FEE_BPS;
+    config.issuer_fee_lamports = ISSUER_FEE_LAMPORTS;
     config.bump = ctx.bumps.config;
     Ok(())
 }

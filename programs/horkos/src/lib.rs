@@ -19,8 +19,12 @@ pub mod horkos {
         crate::instructions::init_config::handle_init_config(ctx)
     }
 
-    pub fn grant_issuer(ctx: Context<GrantIssuer>, wallet: Pubkey) -> Result<()> {
-        crate::instructions::grant_issuer::handle_grant_issuer(ctx, wallet)
+    pub fn update_config(ctx: Context<UpdateConfig>, issuer_fee_lamports: u64) -> Result<()> {
+        crate::instructions::update_config::handle_update_config(ctx, issuer_fee_lamports)
+    }
+
+    pub fn purchase_issuer(ctx: Context<PurchaseIssuer>) -> Result<()> {
+        crate::instructions::purchase_issuer::handle_purchase_issuer(ctx)
     }
 
     pub fn update_issuer(ctx: Context<UpdateIssuer>, active: bool) -> Result<()> {
