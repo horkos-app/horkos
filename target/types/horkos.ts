@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/horkos.json`.
  */
 export type Horkos = {
-  "address": "Ct38Fh3x5S9yifjbTxMBjNjAhkL6o35X111WKiUBUMKf",
+  "address": "AsGTHWf1Cix3TuD2uk4xEewv4MetpSR1W6coCBA2TG6K",
   "metadata": {
     "name": "horkos",
     "version": "0.1.0",
@@ -233,6 +233,14 @@ export type Horkos = {
         {
           "name": "resignWindowSecs",
           "type": "i64"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "description",
+          "type": "string"
         }
       ]
     },
@@ -455,7 +463,12 @@ export type Horkos = {
           "address": "11111111111111111111111111111111"
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "name",
+          "type": "string"
+        }
+      ]
     },
     {
       "name": "renew",
@@ -885,6 +898,14 @@ export type Horkos = {
         {
           "name": "active",
           "type": "bool"
+        },
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "description",
+          "type": "string"
         }
       ]
     }
@@ -983,6 +1004,11 @@ export type Horkos = {
       "code": 6007,
       "name": "licenseTypeInactive",
       "msg": "License type is not active"
+    },
+    {
+      "code": 6008,
+      "name": "textTooLong",
+      "msg": "Name or description too long"
     }
   ],
   "types": [
@@ -1026,6 +1052,10 @@ export type Horkos = {
           {
             "name": "bump",
             "type": "u8"
+          },
+          {
+            "name": "name",
+            "type": "string"
           }
         ]
       }
@@ -1102,6 +1132,14 @@ export type Horkos = {
           {
             "name": "bump",
             "type": "u8"
+          },
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "description",
+            "type": "string"
           }
         ]
       }
@@ -1137,6 +1175,16 @@ export type Horkos = {
       "name": "licenseTypeSeed",
       "type": "bytes",
       "value": "[116, 121, 112, 101]"
+    },
+    {
+      "name": "maxDescLen",
+      "type": "u16",
+      "value": "256"
+    },
+    {
+      "name": "maxNameLen",
+      "type": "u16",
+      "value": "64"
     }
   ]
 };

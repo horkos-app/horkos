@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import type { PublicKey, TransactionInstruction } from "@solana/web3.js";
 import type { ChainState, HorkosProgram, IssuerAcc, LicenseAcc, TypeAcc } from "./chain";
-import type { MetaApi } from "./meta";
 
 export type Role = "master" | "issuer" | "buyer";
 export type Screen = "setup" | "issuers" | "fees" | "types" | "editor" | "payouts" | "browse" | "mine";
@@ -20,7 +19,6 @@ export type Ctx = {
   me: PublicKey;
   balance: number | null;
   program: HorkosProgram;
-  meta: MetaApi;
   myIssuer: IssuerAcc | undefined;
   type: (pda: PublicKey) => TypeAcc | undefined;
   issuerOf: (t: TypeAcc) => IssuerAcc | undefined;

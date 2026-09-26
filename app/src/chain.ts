@@ -42,8 +42,8 @@ export const makeProgram = (connection: Connection, wallet?: AnchorWallet): Hork
   new Program<Horkos>(idl as Horkos, new AnchorProvider(connection, wallet ?? readonlyWallet, { commitment: COMMITMENT }));
 
 export type Cfg = { master: PublicKey; feeBps: number; issuerFee: number };
-export type IssuerAcc = { pda: PublicKey; authority: PublicKey; active: boolean };
-export type TypeAcc = { pda: PublicKey; issuer: PublicKey; id: BN; price: number; duration: number; resign: number; active: boolean };
+export type IssuerAcc = { pda: PublicKey; authority: PublicKey; active: boolean; name: string };
+export type TypeAcc = { pda: PublicKey; issuer: PublicKey; id: BN; price: number; duration: number; resign: number; active: boolean; name: string; desc: string };
 export type LicenseAcc = {
   pda: PublicKey;
   type: PublicKey;
@@ -67,12 +67,12 @@ export async function fetchChain(program: HorkosProgram): Promise<ChainState> {
     program.account.licenseType.all(),
     program.account.license.all(),
     c.getMinimumBalanceForRentExemption(8 + 32 + 32 + 8 + 8 + 8 + 8 + 1),
-    c.getMinimumBalanceForRentExemption(8 + 32 + 8 + 8 + 8 + 8 + 1 + 1),
-    c.getMinimumBalanceForRentExemption(8 + 32 + 1 + 1),
+    c.getMinimumBalanceForRentExemption(8 + 32 + 8 + 8 + 8 + 8 + 1 + 1 + 4 + 64 + 4 + 256),
+    c.getMinimumBalanceForRentExemption(8 + 32 + 1 + 1 + 4 + 64),
   ]);
   return {
     cfg: cfg ? { master: cfg.master, feeBps: cfg.feeBps, issuerFee: n(cfg.issuerFeeLamports) } : null,
-    issuers: issuers.map(({ publicKey, account: a }) => ({ pda: publicKey, authority: a.authority, active: a.active })),
+    issuers: issuers.map(({ publicKey, account: a }) => ({ pda: publicKey, authority: a.authority, active: a.active, name: a.name })),
     types: types
       .map(({ publicKey, account: a }) => ({
         pda: publicKey,
@@ -82,6 +82,8 @@ export async function fetchChain(program: HorkosProgram): Promise<ChainState> {
         duration: n(a.durationSecs),
         resign: n(a.resignWindowSecs),
         active: a.active,
+        name: a.name,
+        desc: a.description,
       }))
       .sort((x, y) => x.id.cmp(y.id)),
     licenses: licenses.map(({ publicKey, account: a }) => ({

@@ -6,6 +6,8 @@ import type { Ctx } from "../ctx";
 import { dt, period, short, sol, span } from "../format";
 import { Dialog, Icon, PageHead, Seg } from "../ui";
 
+const bytes = (s: string) => new TextEncoder().encode(s).length;
+
 export function PurchaseDialog({ ctx }: { ctx: Ctx }) {
   const [label, setLabel] = useState("");
   const cfg = ctx.chain.cfg!;
@@ -22,7 +24,7 @@ export function PurchaseDialog({ ctx }: { ctx: Ctx }) {
         { k: "Network fee", v: "≈ " + sol(NETWORK_FEE) + " SOL" },
       ]}
       cta={"Pay " + sol(cfg.issuerFee) + " SOL"}
-      disabled={ctx.balance !== null && ctx.balance < total}
+      disabled={(ctx.balance !== null && ctx.balance < total) || bytes(label.trim()) > 64}
       onClose={ctx.closeDlg}
       confirm={() => {
         const name = label.trim();
@@ -31,14 +33,13 @@ export function PurchaseDialog({ ctx }: { ctx: Ctx }) {
           title: name || "New issuer",
           detail: short(ctx.me),
           ixs: async () => [
-            await ctx.program.methods.purchaseIssuer().accountsPartial({ authority: ctx.me, master: cfg.master, config: configPda(), issuer: issuerPda(ctx.me) }).instruction(),
+            await ctx.program.methods.purchaseIssuer(name).accountsPartial({ authority: ctx.me, master: cfg.master, config: configPda(), issuer: issuerPda(ctx.me) }).instruction(),
           ],
-          after: () => name && ctx.meta.setIssuer(ctx.me.toBase58(), name),
         });
       }}
     >
       <div className="field">
-        <label>Label (stored off-chain, only visible to you)</label>
+        <label>Name (stored on-chain)</label>
         <input className="input" placeholder="e.g. Kettle Dev Tools" value={label} onChange={(e) => setLabel(e.target.value)} />
       </div>
     </Dialog>
@@ -67,7 +68,6 @@ export function Types({ ctx }: { ctx: Ctx }) {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(300px,1fr))", gap: "var(--space-6)" }}>
         {mine.map((t) => {
           const ls = ctx.licensesOf(t);
-          const m = ctx.meta.typeMeta(t.pda.toBase58(), t.id.toString());
           return (
             <div key={t.pda.toBase58()} className="card elev-sm" style={{ padding: "var(--space-6)", gap: "var(--space-4)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -75,8 +75,8 @@ export function Types({ ctx }: { ctx: Ctx }) {
                 <span className="text-muted" style={{ fontSize: 12 }}>{ls.length} active accounts</span>
               </div>
               <div>
-                <div className="card-title">{m.name}</div>
-                <p className="card-body" style={{ marginTop: "var(--space-2)" }}>{m.desc || <span className="text-muted">No description</span>}</p>
+                <div className="card-title">{t.name}</div>
+                <p className="card-body" style={{ marginTop: "var(--space-2)" }}>{t.desc || <span className="text-muted">No description</span>}</p>
               </div>
               <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
                 <span style={{ fontSize: 28, fontWeight: 500, letterSpacing: "-0.02em" }}>{sol(t.price)}</span>
@@ -111,7 +111,7 @@ const trimNum = (v: number) => String(Math.round(v * 1e6) / 1e6);
 export function Editor({ ctx }: { ctx: Ctx }) {
   const iss = ctx.myIssuer!;
   const editing = ctx.editing ? ctx.chain.types.find((t) => t.pda.toBase58() === ctx.editing) : undefined;
-  const m0 = editing ? ctx.meta.typeMeta(editing.pda.toBase58(), editing.id.toString()) : { name: "", desc: "" };
+  const m0 = editing ? { name: editing.name, desc: editing.desc } : { name: "", desc: "" };
   const [f, setF] = useState(() => ({
     name: editing ? m0.name : "",
     desc: m0.desc,
@@ -125,7 +125,7 @@ export function Editor({ ctx }: { ctx: Ctx }) {
   const price = toLamports(f.price);
   const durSecs = Math.round(f.dur * DAY);
   const resSecs = Math.round(parseFloat(f.res) * DAY);
-  const invalid = !(price > 0) || !f.name.trim() || !(resSecs > 0) || resSecs > durSecs;
+  const invalid = !(price > 0) || !f.name.trim() || bytes(f.name.trim()) > 64 || bytes(f.desc.trim()) > 256 || !(resSecs > 0) || resSecs > durSecs;
   const chainChanged = !!editing && (price !== editing.price || durSecs !== editing.duration || resSecs !== editing.resign || f.active !== editing.active);
   const metaChanged = !!editing && (f.name.trim() !== m0.name || f.desc.trim() !== m0.desc);
   const durOpts = [...new Set([...DURS, ...(editing ? [editing.duration / DAY] : [])])].sort((a, b) => a - b);
@@ -136,25 +136,17 @@ export function Editor({ ctx }: { ctx: Ctx }) {
   const save = () => {
     const meta = { name: f.name.trim(), desc: f.desc.trim() };
     if (editing) {
-      if (!chainChanged) {
-        ctx.meta.setType(editing.pda.toBase58(), meta);
-        ctx.go("types");
-        return;
-      }
       ctx.runTx({
         kicker: "Update license type",
         title: meta.name,
         detail: price !== editing.price ? sol(editing.price) + " → " + sol(price) + " SOL" : "Terms updated",
         ixs: async () => [
           await ctx.program.methods
-            .updateLicenseType(new BN(price), new BN(durSecs), new BN(resSecs), f.active)
+            .updateLicenseType(new BN(price), new BN(durSecs), new BN(resSecs), f.active, meta.name, meta.desc)
             .accountsPartial({ authority: ctx.me, issuer: iss.pda, licenseType: editing.pda })
             .instruction(),
         ],
-        after: () => {
-          ctx.meta.setType(editing.pda.toBase58(), meta);
-          ctx.go("types");
-        },
+        after: () => ctx.go("types"),
       });
       return;
     }
@@ -167,14 +159,11 @@ export function Editor({ ctx }: { ctx: Ctx }) {
       detail: sol(price) + " SOL / " + period(durSecs),
       ixs: async () => [
         await ctx.program.methods
-          .createLicenseType(id, new BN(price), new BN(durSecs), new BN(resSecs))
+          .createLicenseType(id, new BN(price), new BN(durSecs), new BN(resSecs), meta.name, meta.desc)
           .accountsPartial({ authority: ctx.me, issuer: iss.pda, licenseType: pda })
           .instruction(),
       ],
-      after: () => {
-        ctx.meta.setType(pda.toBase58(), meta);
-        ctx.go("types");
-      },
+      after: () => ctx.go("types"),
     });
   };
 
@@ -193,7 +182,7 @@ export function Editor({ ctx }: { ctx: Ctx }) {
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1.2fr) minmax(0,1fr)", gap: "calc(var(--space-8)*1.5)", alignItems: "start" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-6)" }}>
           <div className="field">
-            <label>Name (stored off-chain in this browser)</label>
+            <label>Name</label>
             <input className="input" value={f.name} onChange={(e) => set({ name: e.target.value })} placeholder="e.g. Arcwise IDE Pro" />
           </div>
           <div className="field">

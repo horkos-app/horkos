@@ -16,6 +16,8 @@ const ID: u64 = 1;
 const PRICE: u64 = 1_000_000_000;
 const DURATION: i64 = 1_000;
 const WINDOW: i64 = 100;
+const NAME: &str = "Pro";
+const DESC: &str = "Pro license";
 const FEE: u64 = PRICE * FEE_BPS as u64 / 10_000;
 
 fn pda(seeds: &[&[u8]]) -> Pubkey {
@@ -144,7 +146,7 @@ impl Env {
             issuer: self.issuer_pda(),
             system_program: system_program::ID,
         };
-        send(&mut self.svm, ix::PurchaseIssuer {}, accounts, &self.issuer)
+        send(&mut self.svm, ix::PurchaseIssuer { name: NAME.into() }, accounts, &self.issuer)
     }
 
     fn update_issuer(&mut self, by: Option<&Keypair>, active: bool) -> TransactionResult {
@@ -169,6 +171,8 @@ impl Env {
             price_lamports: PRICE,
             duration_secs,
             resign_window_secs,
+            name: NAME.into(),
+            description: DESC.into(),
         };
         send(&mut self.svm, data, accounts, &self.issuer)
     }
@@ -192,6 +196,8 @@ impl Env {
             duration_secs,
             resign_window_secs,
             active,
+            name: NAME.into(),
+            description: DESC.into(),
         };
         send(&mut self.svm, data, accounts, by)
     }
@@ -329,6 +335,8 @@ fn create_license_type_stores_fields() {
     assert_eq!(lt.duration_secs, DURATION);
     assert_eq!(lt.resign_window_secs, WINDOW);
     assert!(lt.active);
+    assert_eq!(lt.name, NAME);
+    assert_eq!(lt.description, DESC);
 }
 
 #[test]

@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 
 use crate::{
     constants::*,
-    create_license_type::validate_license_params,
+    create_license_type::{validate_license_params, validate_text},
     error::ErrorCode,
     state::{Issuer, LicenseType},
 };
@@ -32,12 +32,17 @@ pub fn handle_update_license_type(
     duration_secs: i64,
     resign_window_secs: i64,
     active: bool,
+    name: String,
+    description: String,
 ) -> Result<()> {
     validate_license_params(duration_secs, resign_window_secs)?;
+    validate_text(&name, &description)?;
     let license_type = &mut ctx.accounts.license_type;
     license_type.price_lamports = price_lamports;
     license_type.duration_secs = duration_secs;
     license_type.resign_window_secs = resign_window_secs;
     license_type.active = active;
+    license_type.name = name;
+    license_type.description = description;
     Ok(())
 }

@@ -64,7 +64,6 @@ export function Browse({ ctx }: { ctx: Ctx }) {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(300px,1fr))", gap: "var(--space-6)" }}>
         {market.map((t) => {
           const own = owned.has(t.pda.toBase58());
-          const m = ctx.meta.typeMeta(t.pda.toBase58(), t.id.toString());
           return (
             <div key={t.pda.toBase58()} className="card elev-sm" style={{ padding: "var(--space-6)", gap: "var(--space-4)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -72,8 +71,8 @@ export function Browse({ ctx }: { ctx: Ctx }) {
                 {own && <span className="tag tag-outline">Owned</span>}
               </div>
               <div>
-                <div className="card-title">{m.name}</div>
-                <p className="card-body" style={{ marginTop: "var(--space-2)" }}>{m.desc}</p>
+                <div className="card-title">{t.name}</div>
+                <p className="card-body" style={{ marginTop: "var(--space-2)" }}>{t.desc}</p>
               </div>
               <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginTop: "auto" }}>
                 <span style={{ fontSize: 28, fontWeight: 500, letterSpacing: "-0.02em" }}>{sol(t.price)}</span>

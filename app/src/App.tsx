@@ -4,7 +4,6 @@ import type { PublicKey } from "@solana/web3.js";
 import { CLUSTER, configPda, errorMessage, explorerAddr, fetchChain, makeProgram, PROGRAM_ID, sendIxs, TxError, type ChainState, type IssuerAcc, type TypeAcc } from "./chain";
 import type { Ctx, Role, Screen, TxSpec } from "./ctx";
 import { short, sol } from "./format";
-import { useMeta } from "./meta";
 import { Buyer, Connect, Issuer, Master } from "./screens";
 import { DevDocs, ForIssuers, HowItWorks, PAGES, type Page } from "./screens/Info";
 import { Icon, Seg, TxModal, type TxView } from "./ui";
@@ -52,7 +51,6 @@ export default function App() {
   const { publicKey, connected, signTransaction, disconnect } = useWallet();
   const anchorWallet = useAnchorWallet();
   const program = useMemo(() => makeProgram(connection, anchorWallet), [connection, anchorWallet]);
-  const meta = useMeta();
   const page = usePage();
 
   const [chain, setChain] = useState<ChainState | null>(null);
@@ -168,18 +166,17 @@ export default function App() {
 
   const typeIdx = new Map(chain?.types.map((t) => [t.pda.toBase58(), t]));
   const issuerIdx = new Map(chain?.issuers.map((i) => [i.pda.toBase58(), i]));
-  const issuerName = (i: IssuerAcc | undefined) => (i ? meta.issuerLabel(i.authority.toBase58()) ?? short(i.authority) : "Unknown issuer");
+  const issuerName = (i: IssuerAcc | undefined) => (i ? i.name || short(i.authority) : "Unknown issuer");
   const ctx: Ctx | null = chain && {
     chain,
     now,
     me,
     balance,
     program,
-    meta,
     myIssuer,
     type: (pda: PublicKey) => typeIdx.get(pda.toBase58()),
     issuerOf: (t: TypeAcc) => issuerIdx.get(t.issuer.toBase58()),
-    typeName: (t) => (t ? meta.typeMeta(t.pda.toBase58(), t.id.toString()).name : "Unknown license"),
+    typeName: (t) => (t ? t.name : "Unknown license"),
     issuerName,
     licensesOf: (t) => chain.licenses.filter((l) => l.type.equals(t.pda)),
     openDlg: setDialog,

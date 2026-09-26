@@ -28,7 +28,8 @@ pub struct PurchaseIssuer<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn handle_purchase_issuer(ctx: Context<PurchaseIssuer>) -> Result<()> {
+pub fn handle_purchase_issuer(ctx: Context<PurchaseIssuer>, name: String) -> Result<()> {
+    require!(name.len() <= MAX_NAME_LEN as usize, ErrorCode::TextTooLong);
     transfer(
         CpiContext::new(
             ctx.accounts.system_program.key(),
@@ -44,5 +45,6 @@ pub fn handle_purchase_issuer(ctx: Context<PurchaseIssuer>) -> Result<()> {
     issuer.authority = ctx.accounts.authority.key();
     issuer.active = true;
     issuer.bump = ctx.bumps.issuer;
+    issuer.name = name;
     Ok(())
 }

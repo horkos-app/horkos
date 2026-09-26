@@ -9,7 +9,7 @@ pub use constants::*;
 pub use instructions::*;
 pub use state::*;
 
-declare_id!("Ct38Fh3x5S9yifjbTxMBjNjAhkL6o35X111WKiUBUMKf");
+declare_id!("AsGTHWf1Cix3TuD2uk4xEewv4MetpSR1W6coCBA2TG6K");
 
 #[program]
 pub mod horkos {
@@ -23,8 +23,8 @@ pub mod horkos {
         crate::instructions::update_config::handle_update_config(ctx, issuer_fee_lamports)
     }
 
-    pub fn purchase_issuer(ctx: Context<PurchaseIssuer>) -> Result<()> {
-        crate::instructions::purchase_issuer::handle_purchase_issuer(ctx)
+    pub fn purchase_issuer(ctx: Context<PurchaseIssuer>, name: String) -> Result<()> {
+        crate::instructions::purchase_issuer::handle_purchase_issuer(ctx, name)
     }
 
     pub fn update_issuer(ctx: Context<UpdateIssuer>, active: bool) -> Result<()> {
@@ -37,6 +37,8 @@ pub mod horkos {
         price_lamports: u64,
         duration_secs: i64,
         resign_window_secs: i64,
+        name: String,
+        description: String,
     ) -> Result<()> {
         crate::instructions::create_license_type::handle_create_license_type(
             ctx,
@@ -44,6 +46,8 @@ pub mod horkos {
             price_lamports,
             duration_secs,
             resign_window_secs,
+            name,
+            description,
         )
     }
 
@@ -52,14 +56,18 @@ pub mod horkos {
         price_lamports: u64,
         duration_secs: i64,
         resign_window_secs: i64,
-        active: bool
+        active: bool,
+        name: String,
+        description: String,
     ) -> Result<()> {
         crate::instructions::update_license_type::handle_update_license_type(
             ctx,
             price_lamports,
             duration_secs,
             resign_window_secs,
-            active
+            active,
+            name,
+            description,
         )
     }
 

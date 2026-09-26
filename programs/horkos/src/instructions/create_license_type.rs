@@ -35,8 +35,11 @@ pub fn handle_create_license_type(
     price_lamports: u64,
     duration_secs: i64,
     resign_window_secs: i64,
+    name: String,
+    description: String,
 ) -> Result<()> {
     validate_license_params(duration_secs, resign_window_secs)?;
+    validate_text(&name, &description)?;
     let license_type = &mut ctx.accounts.license_type;
     license_type.issuer = ctx.accounts.issuer.key();
     license_type.id = id;
@@ -45,6 +48,8 @@ pub fn handle_create_license_type(
     license_type.resign_window_secs = resign_window_secs;
     license_type.active = true;
     license_type.bump = ctx.bumps.license_type;
+    license_type.name = name;
+    license_type.description = description;
     Ok(())
 }
 
@@ -52,6 +57,14 @@ pub(crate) fn validate_license_params(duration_secs: i64, resign_window_secs: i6
     require!(
         duration_secs > 0 && resign_window_secs > 0 && resign_window_secs <= duration_secs,
         ErrorCode::InvalidParams
+    );
+    Ok(())
+}
+
+pub(crate) fn validate_text(name: &str, description: &str) -> Result<()> {
+    require!(
+        name.len() <= MAX_NAME_LEN as usize && description.len() <= MAX_DESC_LEN as usize,
+        ErrorCode::TextTooLong
     );
     Ok(())
 }

@@ -18,4 +18,6 @@ pub enum ErrorCode {
     InvalidParams,
     #[msg("License type is not active")]
     LicenseTypeInactive,
+    #[msg("Name or description too long")]
+    TextTooLong,
 }
