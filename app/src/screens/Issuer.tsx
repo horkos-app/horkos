@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BN } from "@anchor-lang/core";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
-import { configPda, DAY, issuerPda, NETWORK_FEE, typePda, type LicenseAcc } from "../chain";
+import { configPda, DAY, fetchFeeEvents, issuerPda, NETWORK_FEE, typePda, type LicenseAcc } from "../chain";
 import type { Ctx } from "../ctx";
 import { dt, INDEFINITE, period, short, sol, span } from "../format";
 import { Dialog, Icon, PageHead, Seg } from "../ui";
@@ -276,6 +276,25 @@ export function Payouts({ ctx }: { ctx: Ctx }) {
   const batch = claimable.slice(0, CLAIM_BATCH);
   const sum = (xs: typeof sales) => xs.reduce((a, { l }) => a + net(l), 0);
   const horizon = Math.max(30 * DAY, ...locked.map(({ l }) => l.resignDeadline - ctx.now));
+  const [paidOut, setPaidOut] = useState<Map<string, number> | null>(null);
+  useEffect(() => {
+    let live = true;
+    fetchFeeEvents(ctx.program, iss.pda)
+      .then((evs) => {
+        const m = new Map<string, number>();
+        evs.flatMap((e) => e.items).forEach((x) => m.set(x.license, (m.get(x.license) ?? 0) + x.amount - x.fee));
+        if (live) setPaidOut(m);
+      })
+      .catch(() => live && setPaidOut(new Map()));
+    return () => {
+      live = false;
+    };
+  }, [ctx.program, ctx.chain, iss.pda]);
+  const netCell = (l: LicenseAcc) => {
+    if (l.paid) return sol(net(l)) + " SOL";
+    const v = paidOut?.get(l.pda.toBase58());
+    return v ? sol(v) + " SOL paid out" : paidOut ? "—" : "…";
+  };
 
   const claim = (xs: typeof sales) =>
     ctx.runTx({
@@ -358,7 +377,7 @@ export function Payouts({ ctx }: { ctx: Ctx }) {
               <tr key={l.pda.toBase58()}>
                 <td className="mono" style={{ fontSize: 13 }}>{short(l.owner)}</td>
                 <td>{ctx.typeName(t)}</td>
-                <td>{l.paid ? sol(net(l)) + " SOL" : "—"}</td>
+                <td>{netCell(l)}</td>
                 <td className="text-muted">{dt(l.resignDeadline)}</td>
                 <td>
                   <span className={"tag " + { claimable: "tag-accent", locked: "tag-outline", settled: "tag-neutral" }[st]}>

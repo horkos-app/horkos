@@ -100,14 +100,22 @@ export async function fetchChain(program: HorkosProgram): Promise<ChainState> {
   };
 }
 
-export type FeeEvent = { sig: string; time: number; kind: "Claim" | "Renewal"; types: string[]; fee: number; amount: number };
+export type FeeEvent = {
+  sig: string;
+  time: number;
+  kind: "Claim" | "Renewal";
+  types: string[];
+  fee: number;
+  amount: number;
+  items: { license: string; amount: number; fee: number }[];
+};
 
 const feeCache = new Map<string, FeeEvent | null>();
 
-export async function fetchFeeEvents(program: HorkosProgram): Promise<FeeEvent[]> {
+export async function fetchFeeEvents(program: HorkosProgram, address = configPda()): Promise<FeeEvent[]> {
   const connection = program.provider.connection;
   const parser = new EventParser(PROGRAM_ID, program.coder);
-  const sigs = (await connection.getSignaturesForAddress(configPda(), { limit: 100 }, COMMITMENT)).filter((s) => !s.err);
+  const sigs = (await connection.getSignaturesForAddress(address, { limit: 100 }, COMMITMENT)).filter((s) => !s.err);
   const todo = sigs.filter((s) => !feeCache.has(s.signature));
   for (let i = 0; i < todo.length; i += 5) {
     if (i) await new Promise((r) => setTimeout(r, 600));
@@ -121,7 +129,7 @@ export async function fetchFeeEvents(program: HorkosProgram): Promise<FeeEvent[]
       const logs = tx.meta.logMessages ?? [];
       const paid = [...parser.parseLogs(logs)]
         .filter((e) => e.name === "feePaid")
-        .map((e) => e.data as { licenseType: PublicKey; amount: BN; fee: BN });
+        .map((e) => e.data as { license: PublicKey; licenseType: PublicKey; amount: BN; fee: BN });
       if (!paid.length) return;
       feeCache.set(batch[k].signature, {
         sig: batch[k].signature,
@@ -130,6 +138,7 @@ export async function fetchFeeEvents(program: HorkosProgram): Promise<FeeEvent[]
         types: [...new Set(paid.map((p) => p.licenseType.toBase58()))],
         fee: paid.reduce((a, p) => a + n(p.fee), 0),
         amount: paid.reduce((a, p) => a + n(p.amount), 0),
+        items: paid.map((p) => ({ license: p.license.toBase58(), amount: n(p.amount), fee: n(p.fee) })),
       });
     });
   }
