@@ -958,6 +958,21 @@
       ]
     }
   ],
+  "events": [
+    {
+      "name": "FeePaid",
+      "discriminator": [
+        159,
+        12,
+        52,
+        212,
+        249,
+        36,
+        24,
+        18
+      ]
+    }
+  ],
   "errors": [
     {
       "code": 6000,
@@ -1026,6 +1041,30 @@
           {
             "name": "bump",
             "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "FeePaid",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "license",
+            "type": "pubkey"
+          },
+          {
+            "name": "license_type",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "fee",
+            "type": "u64"
           }
         ]
       }

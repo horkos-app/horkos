@@ -964,6 +964,21 @@ export type Horkos = {
       ]
     }
   ],
+  "events": [
+    {
+      "name": "feePaid",
+      "discriminator": [
+        159,
+        12,
+        52,
+        212,
+        249,
+        36,
+        24,
+        18
+      ]
+    }
+  ],
   "errors": [
     {
       "code": 6000,
@@ -1032,6 +1047,30 @@ export type Horkos = {
           {
             "name": "bump",
             "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "feePaid",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "license",
+            "type": "pubkey"
+          },
+          {
+            "name": "licenseType",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "fee",
+            "type": "u64"
           }
         ]
       }
