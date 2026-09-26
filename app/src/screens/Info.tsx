@@ -64,6 +64,22 @@ const Code = ({ children }: { children: string }) => (
   </pre>
 );
 
+const Ledger = ({ title, rows, total }: { title: string; rows: [string, string][]; total: [string, string] }) => (
+  <div className="card" style={{ padding: "var(--space-6)", gap: "var(--space-2)", fontSize: 14 }}>
+    <div className="card-kicker" style={{ marginBottom: "var(--space-2)" }}>{title}</div>
+    {rows.map(([k, v]) => (
+      <div key={k} style={{ display: "flex", justifyContent: "space-between", gap: "var(--space-4)" }}>
+        <span className="text-muted">{k}</span>
+        <span className="mono" style={{ whiteSpace: "nowrap" }}>{v}</span>
+      </div>
+    ))}
+    <div style={{ display: "flex", justifyContent: "space-between", gap: "var(--space-4)", paddingTop: "var(--space-3)", marginTop: "var(--space-1)", borderTop: "1px solid var(--color-divider)", fontSize: 15 }}>
+      <span>{total[0]}</span>
+      <span style={{ color: "var(--color-accent-300)", textAlign: "right" }}>{total[1]}</span>
+    </div>
+  </div>
+);
+
 const Cta = ({ title, body, children }: { title: string; body: ReactNode; children?: ReactNode }) => (
   <div className="card elev-md" style={{ padding: "var(--space-8)", gap: "var(--space-4)", flexDirection: "row", alignItems: "center", flexWrap: "wrap" }}>
     <div style={{ flex: 1, minWidth: 260 }}>
@@ -89,21 +105,44 @@ export function HowItWorks() {
       <Section title="The life of a license">
         <Steps
           items={[
-            { title: "Pick a license", body: "Browse license types published by active issuers. Each shows its price, how long it lasts and how long you have to change your mind." },
-            { title: "Buy with your wallet", body: "One transaction creates a license account tied to your wallet. The payment is held in escrow inside that account — the issuer can't touch it yet." },
-            { title: "Change your mind for free", body: "Until the refund window closes you can resign and get every lamport of the price back. The license account and its rent stay on chain." },
-            { title: "Issuer gets paid", body: "Once the window closes the issuer claims the escrow. 0.1% goes to the protocol as an operation fee; the rest goes to the issuer." },
-            { title: "Renew when you want", body: "Renewing extends the license from its current expiry, so you never lose time you already paid for. Each renewal opens a new refund window for that payment." },
+            { title: "Pick a license", body: "Browse license types from active issuers. Each one shows its price, how long it lasts (a set period or indefinite) and its refund window. Some issuers offer no refunds." },
+            { title: "Buy with your wallet", body: "One transaction creates a license account tied to your wallet and holds your payment in escrow inside it. The issuer can't touch the money until the refund window closes." },
+            { title: "Change your mind", body: "Before the refund window closes you can resign and get the full price back. A new license ends straight away; a renewal falls back to its previous expiry. You only get one resignation per license, and the account rent and network fee aren't refunded." },
+            { title: "Issuer gets paid", body: "Once the window closes, the issuer claims the escrow. 0.1% of it goes to the protocol as an operation fee, taken from the issuer's share, not added to your price." },
+            { title: "Renew when you want", body: "After the refund window you can renew at the issuer's current price and duration. The new period starts at your current expiry, so you never lose time you already paid for. Each renewal gets its own refund window, unless you've already resigned from this license." },
           ]}
         />
       </Section>
 
+      <Section title="What you pay" sub="Example for a 10 SOL license. Rent is Solana's deposit for storing your license account. The account is never closed, so the rent stays with it.">
+        <Grid min={300}>
+          <Ledger
+            title="Buying"
+            rows={[
+              ["License price (held in escrow)", "10.000000"],
+              ["License account rent (once)", "≈ 0.001629"],
+              ["Network fee", "≈ 0.000005"],
+            ]}
+            total={["Total", "≈ 10.001634 SOL"]}
+          />
+          <Ledger
+            title="Resigning inside the window"
+            rows={[
+              ["Price refunded", "+ 10.000000"],
+              ["Rent", "not refunded"],
+              ["Network fee", "− 0.000005"],
+            ]}
+            total={["You get back", "≈ 9.999995 SOL"]}
+          />
+        </Grid>
+      </Section>
+
       <Section title="Why on-chain">
         <Grid>
-          <Feature icon="arrow-counter-clockwise" title="Refunds are guaranteed">The program, not the seller, decides refunds. Inside the window the money is still yours.</Feature>
+          <Feature icon="arrow-counter-clockwise" title="Refunds are enforced">The program, not the seller, decides refunds. Until the window closes, the money is still yours.</Feature>
           <Feature icon="magnifying-glass" title="Free verification">Checking a license is a read of a public account. No license server, API key or lookup fee.</Feature>
-          <Feature icon="lock-simple" title="Terms can't change under you">Price changes apply to new sales only. What you bought keeps the terms it was sold with.</Feature>
-          <Feature icon="coins" title="Tiny, visible fee">A flat 0.1% on each settled sale or renewal, taken on-chain where anyone can audit it.</Feature>
+          <Feature icon="lock-simple" title="Terms can't change under you">If the issuer changes the price, duration or refund window, your current period keeps its terms. The new terms apply only when you renew.</Feature>
+          <Feature icon="coins" title="Tiny, visible fee">A flat 0.1% on each settled sale or renewal, paid by the issuer and taken on-chain where anyone can audit it.</Feature>
         </Grid>
       </Section>
 
@@ -112,8 +151,8 @@ export function HowItWorks() {
           <thead><tr><th>Role</th><th>Can</th></tr></thead>
           <tbody>
             <tr><td style={{ whiteSpace: "nowrap" }}><Icon n="crown-simple" /> Master</td><td className="text-muted">Sets the issuer fee and revokes issuers. Receives issuer fees and the 0.1% operation fee.</td></tr>
-            <tr><td style={{ whiteSpace: "nowrap" }}><Icon n="stack" /> Issuer</td><td className="text-muted">Publish license types, change prices, pause sales and claim proceeds after refund windows close.</td></tr>
-            <tr><td style={{ whiteSpace: "nowrap" }}><Icon n="user" /> Owner</td><td className="text-muted">Buy, renew and resign licenses. One license per type per wallet.</td></tr>
+            <tr><td style={{ whiteSpace: "nowrap" }}><Icon n="stack" /> Issuer</td><td className="text-muted">Publish license types, change their terms, pause sales and claim proceeds after refund windows close.</td></tr>
+            <tr><td style={{ whiteSpace: "nowrap" }}><Icon n="user" /> Owner</td><td className="text-muted">Buy and renew licenses, and resign once per license for a refund. One license per type per wallet; after resigning you can come back by renewing, not by buying again.</td></tr>
           </tbody>
         </table>
       </Section>
@@ -162,14 +201,42 @@ export function ForIssuers() {
         </table>
       </Section>
 
-      <Section title="What a sale pays">
-        <div className="card" style={{ padding: "var(--space-6)", gap: "var(--space-2)", fontSize: 14, maxWidth: 480 }}>
-          <div style={{ display: "flex", justifyContent: "space-between" }}><span className="text-muted">Buyer pays</span><span>10.00 SOL</span></div>
-          <div style={{ display: "flex", justifyContent: "space-between" }}><span className="text-muted">Operation fee (0.1%)</span><span>− 0.01 SOL</span></div>
-          <div style={{ display: "flex", justifyContent: "space-between", paddingTop: "var(--space-3)", marginTop: "var(--space-1)", borderTop: "1px solid var(--color-divider)", fontSize: 16 }}>
-            <span>You receive</span><span style={{ color: "var(--color-accent-300)" }}>9.99 SOL</span>
-          </div>
-        </div>
+      <Section
+        title="What a sale pays"
+        sub="Example for a 10 SOL license. Rent is Solana's refundable deposit for storing an account; Horkos never closes license accounts, so it stays locked. Network fees are the 0.000005 SOL base fee, plus any priority fee the wallet adds."
+      >
+        <Grid min={300}>
+          <Ledger
+            title="Buyer pays"
+            rows={[
+              ["License price (held in escrow)", "10.000000"],
+              ["License account rent", "≈ 0.001629"],
+              ["Network fee", "≈ 0.000005"],
+            ]}
+            total={["Total", "≈ 10.001634 SOL"]}
+          />
+          <Ledger
+            title="You receive when claiming"
+            rows={[
+              ["Escrow released", "10.000000"],
+              ["Operation fee (0.1%)", "− 0.010000"],
+              ["Network fee for the claim", "− 0.000005"],
+            ]}
+            total={["You receive", "≈ 9.989995 SOL"]}
+          />
+          <Ledger
+            title="Your one-time costs"
+            rows={[
+              ["Issuer fee", "Set by the operator"],
+              ["Issuer account rent", "≈ 0.001656"],
+              ["Rent per license type", "≈ 0.003689"],
+            ]}
+            total={["Network fee", "≈ 0.000005 SOL per transaction"]}
+          />
+        </Grid>
+        <p className="text-muted" style={{ margin: 0, fontSize: 13 }}>
+          When an owner renews, the renewal settles the previous payment to you in the same transaction, so you don't pay the claim fee. A resigned license returns the full price to the buyer, but not the rent.
+        </p>
       </Section>
 
       <Cta title="Already an issuer?" body="Connect your issuer wallet and switch to the Issuer view to publish your first license type." />
@@ -177,24 +244,24 @@ export function ForIssuers() {
   );
 }
 
-const ACCOUNTS: [string, string, string][] = [
-  ["Config", '["config"]', "master, fee_bps, issuer_fee_lamports"],
-  ["Issuer", '["issuer", authority]', "authority, active"],
-  ["LicenseType", '["type", issuer, id as u64 LE]', "issuer, id, price_lamports, duration_secs, resign_window_secs, active"],
-  ["License", '["license", license_type, owner]', "license_type, owner, paid, resign_deadline, prev_expires_at, expires_at"],
+const ACCOUNTS: [string, string, string, string][] = [
+  ["Config", '["config"]', "master, fee_bps, issuer_fee_lamports, bump", "51"],
+  ["Issuer", '["issuer", authority]', "authority, active, bump, name (≤ 64 bytes)", "110"],
+  ["LicenseType", '["type", issuer, id as u64 LE]', "issuer, id, price_lamports, duration_secs, resign_window_secs, active, bump, name (≤ 64 bytes), description (≤ 256 bytes)", "402"],
+  ["License", '["license", license_type, owner]', "license_type, owner, paid, resign_deadline, prev_expires_at, expires_at, resigned, bump", "106"],
 ];
 
 const IXS: [string, string, string][] = [
   ["init_config", "anyone (once)", "Creates Config and makes the signer master."],
   ["update_config(issuer_fee_lamports)", "master", "Sets the issuer fee."],
-  ["purchase_issuer", "anyone", "Pays the issuer fee to master and creates an active Issuer for the signer."],
+  ["purchase_issuer(name)", "anyone", "Pays the issuer fee to master and creates an active Issuer for the signer. The name can't be changed later."],
   ["update_issuer(active)", "master", "Revokes or restores an issuer."],
-  ["create_license_type(id, price, duration, window)", "issuer", "Publishes a new LicenseType."],
-  ["update_license_type(price, duration, window, active)", "issuer", "Changes price or pauses sales."],
-  ["purchase", "owner", "Creates License and escrows the price in it."],
-  ["renew", "owner", "After the window: settles the previous payment, escrows a new one and extends from max(expiry, now)."],
-  ["resign", "owner", "Inside the window: refunds the escrow. The account stays on chain."],
-  ["claim", "issuer", "After the window: pays escrow to the issuer minus the fee to master."],
+  ["create_license_type(id, price, duration, window, name, description)", "issuer", "Publishes a new LicenseType. Requires 0 ≤ window ≤ duration; a window of 0 means no refunds."],
+  ["update_license_type(price, duration, window, active, name, description)", "issuer", "Replaces the terms, name and description, or pauses sales. Licenses already sold keep their current period."],
+  ["purchase", "owner", "Creates License and escrows the price in it. resign_deadline = now + window, expires_at = now + duration."],
+  ["renew", "owner", "Once now ≥ resign_deadline: settles any unclaimed payment (emits FeePaid), escrows the current price and extends from max(expiry, now)."],
+  ["resign", "owner", "While now < resign_deadline: refunds the escrow and reverts expires_at to prev_expires_at. Once per license; the account stays on chain."],
+  ["claim", "issuer", "Once now ≥ resign_deadline: pays escrow to the issuer minus the fee to master (emits FeePaid)."],
 ];
 
 const ERRORS: [string, string][] = [
@@ -203,8 +270,10 @@ const ERRORS: [string, string][] = [
   ["ResignWindowOpen", "Resign window is still open"],
   ["ResignWindowClosed", "Resign window has closed"],
   ["NothingToClaim", "No escrow to claim"],
+  ["Overflow", "Arithmetic overflow"],
   ["InvalidParams", "Invalid license type parameters"],
   ["LicenseTypeInactive", "License type is not active"],
+  ["TextTooLong", "Name or description too long"],
 ];
 
 export function DevDocs() {
@@ -215,7 +284,7 @@ export function DevDocs() {
       title="Verify a license in one RPC call."
       sub={<>Everything lives in program <span className="mono" style={{ fontSize: 14 }}>{pid}</span>. There's no API to call — derive the address, read the account, compare the expiry.</>}
     >
-      <Section title="Check a license" sub="The License account is a PDA of the license type and the owner's wallet. expires_at is an i64 Unix timestamp at byte offset 96.">
+      <Section title="Check a license" sub="The License account is a PDA of the license type and the owner's wallet. expires_at is an i64 Unix timestamp at byte offset 96. A resigned license reverts it to the previous expiry, so the same check covers refunds. Indefinite licenses simply expire about 1000 years out.">
         <Code>{`import { Connection, PublicKey } from "@solana/web3.js";
 
 const PROGRAM_ID = new PublicKey("${pid}");
@@ -247,10 +316,10 @@ const [licenseType] = PublicKey.findProgramAddressSync(
 
       <Section title="Accounts">
         <table className="table">
-          <thead><tr><th>Account</th><th>Seeds</th><th>Fields</th></tr></thead>
+          <thead><tr><th>Account</th><th>Seeds</th><th>Fields</th><th>Size (bytes)</th></tr></thead>
           <tbody>
-            {ACCOUNTS.map(([a, s, f]) => (
-              <tr key={a}><td>{a}</td><td className="mono" style={{ fontSize: 12 }}>{s}</td><td className="text-muted" style={{ fontSize: 13 }}>{f}</td></tr>
+            {ACCOUNTS.map(([a, s, f, b]) => (
+              <tr key={a}><td>{a}</td><td className="mono" style={{ fontSize: 12 }}>{s}</td><td className="text-muted" style={{ fontSize: 13 }}>{f}</td><td className="mono" style={{ fontSize: 12 }}>{b}</td></tr>
             ))}
           </tbody>
         </table>
@@ -265,6 +334,22 @@ const [licenseType] = PublicKey.findProgramAddressSync(
             ))}
           </tbody>
         </table>
+      </Section>
+
+      <Section title="Events" sub="claim and renew emit FeePaid whenever escrow is settled. It's written to the transaction logs, so you can read exact fees from transaction history without comparing balances. amount is the escrow settled and fee is the part of it paid to master, both in lamports.">
+        <Code>{`#[event]
+pub struct FeePaid {
+    pub license: Pubkey,
+    pub license_type: Pubkey,
+    pub amount: u64,
+    pub fee: u64,
+}`}</Code>
+        <Code>{`import { EventParser } from "@anchor-lang/core";
+
+const parser = new EventParser(program.programId, program.coder);
+for (const e of parser.parseLogs(tx.meta.logMessages ?? [])) {
+  if (e.name === "feePaid") console.log(e.data.licenseType.toBase58(), e.data.amount.toString(), e.data.fee.toString());
+}`}</Code>
       </Section>
 
       <Section title="Errors">
