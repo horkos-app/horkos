@@ -345,6 +345,17 @@ fn create_license_type_rejects_bad_params() {
     ok(env.buy_issuer(None));
     fails(env.create_type(WINDOW, DURATION), "InvalidParams");
     fails(env.create_type(0, 0), "InvalidParams");
+    fails(env.create_type(DURATION, -1), "InvalidParams");
+}
+
+#[test]
+fn zero_resign_window_allows_no_refund_and_immediate_claim() {
+    let mut env = Env::new();
+    ok(env.buy_issuer(None));
+    ok(env.create_type(DURATION, 0));
+    ok(env.purchase());
+    fails(env.resign(), "ResignWindowClosed");
+    ok(env.claim());
 }
 
 #[test]

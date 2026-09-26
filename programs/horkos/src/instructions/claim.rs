@@ -38,7 +38,7 @@ pub struct Claim<'info> {
 
 pub fn handle_claim(ctx: Context<Claim>) -> Result<()> {
     let now = Clock::get()?.unix_timestamp;
-    require!(now > ctx.accounts.license.resign_deadline, ErrorCode::ResignWindowOpen);
+    require!(now >= ctx.accounts.license.resign_deadline, ErrorCode::ResignWindowOpen);
     require!(ctx.accounts.license.paid > 0, ErrorCode::NothingToClaim);
 
     pay_out(

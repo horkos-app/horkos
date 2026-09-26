@@ -49,7 +49,7 @@ pub struct Renew<'info> {
 
 pub fn handle_renew(ctx: Context<Renew>) -> Result<()> {
     let now = Clock::get()?.unix_timestamp;
-    require!(now > ctx.accounts.license.resign_deadline, ErrorCode::ResignWindowOpen);
+    require!(now >= ctx.accounts.license.resign_deadline, ErrorCode::ResignWindowOpen);
 
     transfer(
         CpiContext::new(

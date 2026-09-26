@@ -30,7 +30,7 @@ pub fn handle_resign(ctx: Context<Resign>) -> Result<()> {
     let owner = ctx.accounts.owner.to_account_info();
     let license = &mut ctx.accounts.license;
     require!(
-        !license.resigned && now <= license.resign_deadline,
+        !license.resigned && now < license.resign_deadline,
         ErrorCode::ResignWindowClosed
     );
     require!(license.paid > 0, ErrorCode::NothingToClaim);

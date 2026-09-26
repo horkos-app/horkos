@@ -55,7 +55,7 @@ pub fn handle_create_license_type(
 
 pub(crate) fn validate_license_params(duration_secs: i64, resign_window_secs: i64) -> Result<()> {
     require!(
-        duration_secs > 0 && resign_window_secs > 0 && resign_window_secs <= duration_secs,
+        duration_secs > 0 && resign_window_secs >= 0 && resign_window_secs <= duration_secs,
         ErrorCode::InvalidParams
     );
     Ok(())

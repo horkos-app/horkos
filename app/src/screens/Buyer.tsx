@@ -15,7 +15,7 @@ function buy(ctx: Ctx, t: TypeAcc) {
       body={ctx.issuerName(iss) + " · " + period(t.duration) + " license. Your payment is held in escrow by the license account until the refund window ends."}
       stops={[
         { k: "Today", v: dt(ctx.now) },
-        { k: "Full refund until", v: dt(ctx.now + t.resign) },
+        { k: "Full refund until", v: t.resign ? dt(ctx.now + t.resign) : "No refunds" },
         { k: "Expires", v: dt(ctx.now + t.duration) },
       ]}
       rows={[
@@ -141,7 +141,7 @@ function renew(ctx: Ctx, l: LicenseAcc, t: TypeAcc) {
       }
       stops={[
         { k: "Current expiry", v: dt(l.expiresAt) },
-        ...(l.resigned ? [] : [{ k: "Refund until", v: dt(ctx.now + t.resign) }]),
+        ...(l.resigned ? [] : [{ k: "Refund until", v: t.resign ? dt(ctx.now + t.resign) : "No refunds" }]),
         { k: "New expiry", v: dt(newExp) },
       ]}
       rows={[
@@ -186,10 +186,10 @@ export function Mine({ ctx }: { ctx: Ctx }) {
     const start = l.prevExpiresAt;
     const spanS = Math.max(l.expiresAt - start, 1);
     const expired = l.expiresAt <= now;
-    const refundable = !l.resigned && l.paid > 0 && now <= l.resignDeadline;
+    const refundable = !l.resigned && l.paid > 0 && now < l.resignDeadline;
     const soon = !expired && l.expiresAt - now <= 30 * DAY;
     const saleOpen = t.active && !!iss?.active;
-    const canRenew = now > l.resignDeadline && saleOpen;
+    const canRenew = now >= l.resignDeadline && saleOpen;
     const status = expired ? "Expired" : refundable ? "Refundable · " + span(l.resignDeadline - now) : soon ? "Expires in " + span(l.expiresAt - now) : "Active";
     return {
       l, t, iss, start, expired, refundable, soon, canRenew, status,

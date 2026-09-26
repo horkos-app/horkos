@@ -83,7 +83,7 @@ export function Types({ ctx }: { ctx: Ctx }) {
                 <span className="text-muted">SOL / {period(t.duration)}</span>
               </div>
               <div style={{ display: "flex", gap: "var(--space-6)", fontSize: 12 }} className="text-muted">
-                <span><Icon n="arrow-counter-clockwise" /> {span(t.resign)} refund window</span>
+                <span><Icon n="arrow-counter-clockwise" /> {t.resign ? span(t.resign) + " refund window" : "No refunds"}</span>
                 <span><Icon n="coins" /> {sol(ls.reduce((a, l) => a + l.paid, 0))} SOL in escrow</span>
               </div>
               <button className="btn btn-secondary" style={{ alignSelf: "flex-start" }} onClick={() => ctx.go("editor", t.pda.toBase58())} disabled={!iss.active}>
@@ -125,7 +125,7 @@ export function Editor({ ctx }: { ctx: Ctx }) {
   const price = toLamports(f.price);
   const durSecs = Math.round(f.dur * DAY);
   const resSecs = Math.round(parseFloat(f.res) * DAY);
-  const invalid = !(price > 0) || !f.name.trim() || bytes(f.name.trim()) > 64 || bytes(f.desc.trim()) > 256 || !(resSecs > 0) || resSecs > durSecs;
+  const invalid = !(price > 0) || !f.name.trim() || bytes(f.name.trim()) > 64 || bytes(f.desc.trim()) > 256 || !(resSecs >= 0) || resSecs > durSecs;
   const chainChanged = !!editing && (price !== editing.price || durSecs !== editing.duration || resSecs !== editing.resign || f.active !== editing.active);
   const metaChanged = !!editing && (f.name.trim() !== m0.name || f.desc.trim() !== m0.desc);
   const durOpts = [...new Set([...DURS, ...(editing ? [editing.duration / DAY] : [])])].sort((a, b) => a - b);
@@ -234,7 +234,7 @@ export function Editor({ ctx }: { ctx: Ctx }) {
               <span className="text-muted">SOL / {period(durSecs)}</span>
             </div>
             <div className="text-muted" style={{ fontSize: 12 }}>
-              <Icon n="arrow-counter-clockwise" /> Refundable for {span(resSecs > 0 ? resSecs : 0)}
+              <Icon n="arrow-counter-clockwise" /> {resSecs > 0 ? "Refundable for " + span(resSecs) : "No refunds"}
             </div>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)", fontSize: 13, padding: "var(--space-2)" }}>
@@ -248,7 +248,7 @@ export function Editor({ ctx }: { ctx: Ctx }) {
             </div>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <span className="text-muted">Claimable after</span>
-              <span>{span(resSecs > 0 ? resSecs : 0)} from purchase</span>
+              <span>{resSecs > 0 ? span(resSecs) + " from purchase" : "Immediately"}</span>
             </div>
             {!editing && (
               <div style={{ display: "flex", justifyContent: "space-between" }}>
@@ -271,8 +271,8 @@ export function Payouts({ ctx }: { ctx: Ctx }) {
   const myTypes = ctx.chain.types.filter((t) => t.issuer.equals(iss.pda));
   const sales = myTypes.flatMap((t) => ctx.licensesOf(t).map((l) => ({ l, t })));
   const net = (l: LicenseAcc) => l.paid - Math.floor((l.paid * cfg.feeBps) / 10_000);
-  const claimable = sales.filter(({ l }) => l.paid > 0 && ctx.now > l.resignDeadline);
-  const locked = sales.filter(({ l }) => l.paid > 0 && ctx.now <= l.resignDeadline).sort((a, b) => a.l.resignDeadline - b.l.resignDeadline);
+  const claimable = sales.filter(({ l }) => l.paid > 0 && ctx.now >= l.resignDeadline);
+  const locked = sales.filter(({ l }) => l.paid > 0 && ctx.now < l.resignDeadline).sort((a, b) => a.l.resignDeadline - b.l.resignDeadline);
   const batch = claimable.slice(0, CLAIM_BATCH);
   const sum = (xs: typeof sales) => xs.reduce((a, { l }) => a + net(l), 0);
   const horizon = Math.max(30 * DAY, ...locked.map(({ l }) => l.resignDeadline - ctx.now));
@@ -353,7 +353,7 @@ export function Payouts({ ctx }: { ctx: Ctx }) {
         </thead>
         <tbody>
           {rows.map(({ l, t }) => {
-            const st = l.paid === 0 ? "settled" : ctx.now > l.resignDeadline ? "claimable" : "locked";
+            const st = l.paid === 0 ? "settled" : ctx.now >= l.resignDeadline ? "claimable" : "locked";
             return (
               <tr key={l.pda.toBase58()}>
                 <td className="mono" style={{ fontSize: 13 }}>{short(l.owner)}</td>
