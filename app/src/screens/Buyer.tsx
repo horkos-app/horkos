@@ -55,7 +55,7 @@ export function Browse({ ctx }: { ctx: Ctx }) {
     .filter((t) => !q || (ctx.typeName(t) + " " + ctx.issuerName(ctx.issuerOf(t))).toLowerCase().includes(q));
   return (
     <>
-      <PageHead title="Browse licenses" sub="Every license comes with a refund window set by its issuer.">
+      <PageHead title="Browse licenses" sub="Refund windows are set by each issuer.">
         <div style={{ position: "relative", width: 280 }}>
           <Icon n="magnifying-glass" style={{ position: "absolute", left: 11, top: 11 }} />
           <input className="input" style={{ paddingLeft: 32 }} placeholder="Search software or issuer" value={query} onChange={(e) => setQuery(e.target.value)} />
@@ -80,7 +80,7 @@ export function Browse({ ctx }: { ctx: Ctx }) {
               </div>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <span className="text-muted" style={{ fontSize: 12 }}>
-                  <Icon n="arrow-counter-clockwise" /> Refundable for {span(t.resign)}
+                  <Icon n="arrow-counter-clockwise" /> {t.resign ? "Refundable for " + span(t.resign) : "No refunds"}
                 </span>
                 <button className="btn btn-primary" onClick={() => (own ? ctx.go("mine") : buy(ctx, t))}>{own ? "View" : "Buy"}</button>
               </div>

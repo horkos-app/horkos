@@ -105,7 +105,7 @@ export type FeeEvent = { sig: string; time: number; kind: "Claim" | "Renewal"; t
 const feeCache = new Map<string, FeeEvent | null>();
 
 export async function fetchFeeEvents(connection: Connection, cfg: Cfg): Promise<FeeEvent[]> {
-  const sigs = (await connection.getSignaturesForAddress(cfg.master, { limit: 1 }, COMMITMENT)).filter((s) => !s.err);
+  const sigs = (await connection.getSignaturesForAddress(configPda(), { limit: 100 }, COMMITMENT)).filter((s) => !s.err);
   const todo = sigs.filter((s) => !feeCache.has(s.signature));
   for (let i = 0; i < todo.length; i += 5) {
     if (i) await new Promise((r) => setTimeout(r, 600));
