@@ -58,6 +58,7 @@ export default function App() {
   const [chain, setChain] = useState<ChainState | null>(null);
   const [loadErr, setLoadErr] = useState<string | null>(null);
   const [balance, setBalance] = useState<number | null>(null);
+  const [copied, setCopied] = useState(false);
   const [now, setNow] = useState(nowSec);
   const [role, setRole] = useState<Role>("buyer");
   const [screen, setScreen] = useState<Screen>("browse");
@@ -208,7 +209,21 @@ export default function App() {
           )}
           <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)", padding: "var(--space-2) var(--space-3)", borderRadius: "var(--radius-md)", background: "var(--color-surface)", boxShadow: "var(--shadow-sm)" }}>
             <span style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--color-accent)" }} />
-            <a href={explorerAddr(me)} target="_blank" rel="noreferrer" className="mono" style={{ fontSize: 13, color: "var(--color-text)", textDecoration: "none" }}>{short(me)}</a>
+            <button
+              className="mono"
+              title="Copy address"
+              onClick={() => navigator.clipboard.writeText(me.toBase58()).then(() => {
+                setCopied(true);
+                setTimeout(() => setCopied(false), 1500);
+              })}
+              style={{ fontSize: 13, color: "var(--color-text)", background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex", alignItems: "center", gap: "var(--space-1)" }}
+            >
+              {copied ? "Copied" : short(me)}
+              <Icon n={copied ? "check" : "copy"} />
+            </button>
+            <a href={explorerAddr(me)} target="_blank" rel="noreferrer" title="View in explorer" style={{ fontSize: 13, color: "var(--color-text-muted, inherit)", display: "flex" }}>
+              <Icon n="arrow-up-right" />
+            </a>
             <span className="text-muted" style={{ fontSize: 13 }}>{balance === null ? "…" : sol(balance)} SOL</span>
             <button className="btn btn-ghost" style={{ fontSize: 12 }} onClick={() => disconnect()} title="Disconnect">
               <Icon n="sign-out" />
