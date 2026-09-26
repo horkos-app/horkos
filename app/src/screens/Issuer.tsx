@@ -1,10 +1,49 @@
 import { useState } from "react";
 import { BN } from "@anchor-lang/core";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
-import { configPda, DAY, typePda, type LicenseAcc } from "../chain";
+import { configPda, DAY, issuerPda, NETWORK_FEE, typePda, type LicenseAcc } from "../chain";
 import type { Ctx } from "../ctx";
 import { dt, period, short, sol, span } from "../format";
-import { Icon, PageHead, Seg } from "../ui";
+import { Dialog, Icon, PageHead, Seg } from "../ui";
+
+export function PurchaseDialog({ ctx }: { ctx: Ctx }) {
+  const [label, setLabel] = useState("");
+  const cfg = ctx.chain.cfg!;
+  const total = cfg.issuerFee + ctx.chain.rents.issuer + NETWORK_FEE;
+  return (
+    <Dialog
+      icon="storefront"
+      title="Become a license issuer"
+      body="Pay the one-time issuer fee to the master account. Your wallet can then create license types, set their prices and claim payouts."
+      rows={[
+        { k: "Instruction", v: "purchase_issuer" },
+        { k: "Issuer fee", v: sol(cfg.issuerFee) + " SOL" },
+        { k: "Issuer account rent", v: sol(ctx.chain.rents.issuer) + " SOL" },
+        { k: "Network fee", v: "≈ " + sol(NETWORK_FEE) + " SOL" },
+      ]}
+      cta={"Pay " + sol(cfg.issuerFee) + " SOL"}
+      disabled={ctx.balance !== null && ctx.balance < total}
+      onClose={ctx.closeDlg}
+      confirm={() => {
+        const name = label.trim();
+        ctx.runTx({
+          kicker: "Purchase issuer",
+          title: name || "New issuer",
+          detail: short(ctx.me),
+          ixs: async () => [
+            await ctx.program.methods.purchaseIssuer().accountsPartial({ authority: ctx.me, master: cfg.master, config: configPda(), issuer: issuerPda(ctx.me) }).instruction(),
+          ],
+          after: () => name && ctx.meta.setIssuer(ctx.me.toBase58(), name),
+        });
+      }}
+    >
+      <div className="field">
+        <label>Label (stored off-chain, only visible to you)</label>
+        <input className="input" placeholder="e.g. Kettle Dev Tools" value={label} onChange={(e) => setLabel(e.target.value)} />
+      </div>
+    </Dialog>
+  );
+}
 
 const RevokedNote = () => (
   <div className="card" style={{ padding: "var(--space-4) var(--space-6)", flexDirection: "row", alignItems: "center", gap: "var(--space-3)", fontSize: 13 }}>

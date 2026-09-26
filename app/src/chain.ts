@@ -39,7 +39,7 @@ export type HorkosProgram = Program<Horkos>;
 export const makeProgram = (connection: Connection, wallet?: AnchorWallet): HorkosProgram =>
   new Program<Horkos>(idl as Horkos, new AnchorProvider(connection, wallet ?? readonlyWallet, { commitment: COMMITMENT }));
 
-export type Cfg = { master: PublicKey; feeBps: number };
+export type Cfg = { master: PublicKey; feeBps: number; issuerFee: number };
 export type IssuerAcc = { pda: PublicKey; authority: PublicKey; active: boolean };
 export type TypeAcc = { pda: PublicKey; issuer: PublicKey; id: BN; price: number; duration: number; resign: number; active: boolean };
 export type LicenseAcc = {
@@ -49,6 +49,7 @@ export type LicenseAcc = {
   paid: number;
   resignDeadline: number;
   prevExpiresAt: number;
+  resigned: boolean;
   expiresAt: number;
 };
 export type Rents = { license: number; type: number; issuer: number };
@@ -68,7 +69,7 @@ export async function fetchChain(program: HorkosProgram): Promise<ChainState> {
     c.getMinimumBalanceForRentExemption(8 + 32 + 1 + 1),
   ]);
   return {
-    cfg: cfg ? { master: cfg.master, feeBps: cfg.feeBps } : null,
+    cfg: cfg ? { master: cfg.master, feeBps: cfg.feeBps, issuerFee: n(cfg.issuerFeeLamports) } : null,
     issuers: issuers.map(({ publicKey, account: a }) => ({ pda: publicKey, authority: a.authority, active: a.active })),
     types: types
       .map(({ publicKey, account: a }) => ({
@@ -88,6 +89,7 @@ export async function fetchChain(program: HorkosProgram): Promise<ChainState> {
       paid: n(a.paid),
       resignDeadline: n(a.resignDeadline),
       prevExpiresAt: n(a.prevExpiresAt),
+      resigned: a.resigned,
       expiresAt: n(a.expiresAt),
     })),
     rents: { license: rl, type: rt, issuer: ri },

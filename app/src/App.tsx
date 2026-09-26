@@ -58,7 +58,7 @@ export default function App() {
   const [chain, setChain] = useState<ChainState | null>(null);
   const [loadErr, setLoadErr] = useState<string | null>(null);
   const [balance, setBalance] = useState<number | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<string | null>(null);
   const [now, setNow] = useState(nowSec);
   const [role, setRole] = useState<Role>("buyer");
   const [screen, setScreen] = useState<Screen>("browse");
@@ -102,6 +102,12 @@ export default function App() {
       setScreen("browse");
     }
   }, [chain, roles, role]);
+
+  const copy = (v: string) =>
+    navigator.clipboard.writeText(v).then(() => {
+      setCopied(v);
+      setTimeout(() => setCopied(null), 1500);
+    });
 
   const pickRole = (r: Role) => {
     setRole(r);
@@ -201,6 +207,12 @@ export default function App() {
     <Shell
       right={
         <>
+          {ctx && chain?.cfg && !myIssuer && (
+            <button className="btn btn-secondary" onClick={() => setDialog(<Issuer.PurchaseDialog ctx={ctx} />)}>
+              <Icon n="storefront" />
+              Become issuer
+            </button>
+          )}
           {roles.length > 1 && (
             <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
               <span className="text-muted" style={{ fontSize: 12 }}>Viewing as</span>
@@ -212,14 +224,11 @@ export default function App() {
             <button
               className="mono"
               title="Copy address"
-              onClick={() => navigator.clipboard.writeText(me.toBase58()).then(() => {
-                setCopied(true);
-                setTimeout(() => setCopied(false), 1500);
-              })}
+              onClick={() => copy(me.toBase58())}
               style={{ fontSize: 13, color: "var(--color-text)", background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex", alignItems: "center", gap: "var(--space-1)" }}
             >
-              {copied ? "Copied" : short(me)}
-              <Icon n={copied ? "check" : "copy"} />
+              {copied === me.toBase58() ? "Copied" : short(me)}
+              <Icon n={copied === me.toBase58() ? "check" : "copy"} />
             </button>
             <a href={explorerAddr(me)} target="_blank" rel="noreferrer" title="View in explorer" style={{ fontSize: 13, color: "var(--color-text-muted, inherit)", display: "flex" }}>
               <Icon n="arrow-up-right" />
@@ -235,7 +244,7 @@ export default function App() {
       <div style={{ flex: 1, display: "grid", gridTemplateColumns: "232px minmax(0,1fr)" }}>
         <aside style={{ padding: "var(--space-6) var(--space-4)", display: "flex", flexDirection: "column", gap: "var(--space-1)", background: "linear-gradient(to bottom, transparent, var(--color-divider) 48px, var(--color-divider) calc(100% - 48px), transparent) no-repeat right / 1px 100%" }}>
           <h6 className="text-muted" style={{ padding: "0 var(--space-3)", margin: "0 0 var(--space-3)" }}>
-            {needsSetup ? "Setup" : { master: "Master account", issuer: "License issuer", buyer: "Licenses" }[role]}
+            {needsSetup ? "Setup" : { master: "Master", issuer: "License issuer", buyer: "Owner" }[role]}
           </h6>
           {!needsSetup &&
             nav.map((n) => (
@@ -253,15 +262,11 @@ export default function App() {
             ))}
           <div className="text-muted" style={{ marginTop: "auto", padding: "var(--space-3)", fontSize: 11, display: "flex", flexDirection: "column", gap: 4 }}>
             <span>
-              {role === "master"
-                ? "Receives " + ((chain?.cfg?.feeBps ?? 10) / 100).toLocaleString("en-US") + "% of every sale and renewal."
-                : role === "issuer" && myIssuer
-                  ? issuerName(myIssuer) + (myIssuer.active ? " · active issuer" : " · revoked")
-                  : "Signed in as " + short(me)}
+              Signed in as <span className="mono" title="Copy address" style={{ cursor: "pointer" }} onClick={() => copy(me.toBase58())}>{copied === me.toBase58() ? "Copied" : short(me)}</span>
             </span>
-            <a href={explorerAddr(PROGRAM_ID)} target="_blank" rel="noreferrer" className="mono text-muted" style={{ textDecoration: "none" }}>
-              Program {short(PROGRAM_ID)}
-            </a>
+            <span className="mono text-muted" title="Copy address" style={{ cursor: "pointer" }} onClick={() => copy(PROGRAM_ID.toBase58())}>
+              Program {copied === PROGRAM_ID.toBase58() ? "Copied" : short(PROGRAM_ID)}
+            </span>
           </div>
         </aside>
 
@@ -324,7 +329,7 @@ function Setup({ ctx }: { ctx: Ctx }) {
       <span className="card-kicker">First run</span>
       <div className="card-title" style={{ fontSize: 22 }}>Initialize the license program</div>
       <p className="card-body">
-        The program at <span className="mono">{short(PROGRAM_ID)}</span> has no configuration yet. Initializing makes the connected wallet the master account: it grants issuer privileges and receives the 0.1% operation fee.
+        The program at <span className="mono">{short(PROGRAM_ID)}</span> has no configuration yet. Initializing makes the connected wallet the master account: it sets the issuer fee, can revoke issuers, and receives issuer fees and the 0.1% operation fee.
       </p>
       <button
         className="btn btn-primary"

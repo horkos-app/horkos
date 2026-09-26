@@ -21,7 +21,7 @@ function buy(ctx: Ctx, t: TypeAcc) {
       rows={[
         { k: "License price", v: sol(t.price) + " SOL" },
         { k: "Operation fee (" + feePct + "%, paid by issuer)", v: "included" },
-        { k: "License account rent · refunded if you resign", v: sol(ctx.chain.rents.license) + " SOL" },
+        { k: "License account rent", v: sol(ctx.chain.rents.license) + " SOL" },
         { k: "Network fee", v: "≈ " + sol(NETWORK_FEE) + " SOL" },
       ]}
       total={{ k: "Total", v: sol(t.price + ctx.chain.rents.license + NETWORK_FEE) + " SOL" }}
@@ -75,7 +75,7 @@ export function Browse({ ctx }: { ctx: Ctx }) {
                 <div className="card-title">{m.name}</div>
                 <p className="card-body" style={{ marginTop: "var(--space-2)" }}>{m.desc}</p>
               </div>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginTop: "auto" }}>
                 <span style={{ fontSize: 28, fontWeight: 500, letterSpacing: "-0.02em" }}>{sol(t.price)}</span>
                 <span className="text-muted">SOL / {period(t.duration)}</span>
               </div>
@@ -97,19 +97,18 @@ export function Browse({ ctx }: { ctx: Ctx }) {
 function resign(ctx: Ctx, l: LicenseAcc, t: TypeAcc) {
   const name = ctx.typeName(t);
   const closes = l.prevExpiresAt <= ctx.now;
-  const refund = l.paid + (closes ? ctx.chain.rents.license : 0);
+  const refund = l.paid;
   ctx.openDlg(
     <Dialog
       icon="arrow-counter-clockwise"
       title={"Resign from " + name + "?"}
       body={
         closes
-          ? "Your license ends immediately and its account is closed. Refunds are available until " + dt(l.resignDeadline) + "."
+          ? "Your license ends immediately."
           : "Your latest renewal is cancelled and refunded. The license falls back to its previous expiry, " + dt(l.prevExpiresAt) + "."
       }
       rows={[
         { k: "Refunded from escrow", v: "+" + sol(l.paid) + " SOL" },
-        ...(closes ? [{ k: "Account rent returned", v: "+" + sol(ctx.chain.rents.license) + " SOL" }] : []),
         { k: "Network fee", v: "≈ " + sol(NETWORK_FEE) + " SOL" },
       ]}
       total={{ k: "You receive", v: sol(refund) + " SOL" }}
@@ -138,12 +137,12 @@ function renew(ctx: Ctx, l: LicenseAcc, t: TypeAcc) {
       title={"Renew " + name}
       body={
         l.expiresAt > ctx.now
-          ? "Renewal extends from your current expiry, so you don't lose the time you have left. You get a fresh refund window for this payment."
+          ? "Renewal extends from your current expiry, so you don't lose the time you have left." + (l.resigned ? " You already used a refund on this license, so this payment is not refundable." : " You get a fresh refund window for this payment.")
           : "Your license has expired. Renewing starts a new period from today."
       }
       stops={[
         { k: "Current expiry", v: dt(l.expiresAt) },
-        { k: "Refund until", v: dt(ctx.now + t.resign) },
+        ...(l.resigned ? [] : [{ k: "Refund until", v: dt(ctx.now + t.resign) }]),
         { k: "New expiry", v: dt(newExp) },
       ]}
       rows={[
@@ -185,11 +184,10 @@ export function Mine({ ctx }: { ctx: Ctx }) {
 
   const items = mine.map(({ l, t }) => {
     const iss = ctx.issuerOf(t);
-    const paidAt = l.resignDeadline - t.resign;
-    const start = Math.min(paidAt, l.prevExpiresAt);
+    const start = l.prevExpiresAt;
     const spanS = Math.max(l.expiresAt - start, 1);
     const expired = l.expiresAt <= now;
-    const refundable = l.paid > 0 && now <= l.resignDeadline;
+    const refundable = !l.resigned && l.paid > 0 && now <= l.resignDeadline;
     const soon = !expired && l.expiresAt - now <= 30 * DAY;
     const saleOpen = t.active && !!iss?.active;
     const canRenew = now > l.resignDeadline && saleOpen;

@@ -89,9 +89,9 @@ export function HowItWorks() {
       <Section title="The life of a license">
         <Steps
           items={[
-            { title: "Pick a license", body: "Browse license types published by approved issuers. Each shows its price, how long it lasts and how long you have to change your mind." },
+            { title: "Pick a license", body: "Browse license types published by active issuers. Each shows its price, how long it lasts and how long you have to change your mind." },
             { title: "Buy with your wallet", body: "One transaction creates a license account tied to your wallet. The payment is held in escrow inside that account — the issuer can't touch it yet." },
-            { title: "Change your mind for free", body: "Until the refund window closes you can resign and get every lamport of the price back. A first purchase is closed entirely, so the account rent comes back too." },
+            { title: "Change your mind for free", body: "Until the refund window closes you can resign and get every lamport of the price back. The license account and its rent stay on chain." },
             { title: "Issuer gets paid", body: "Once the window closes the issuer claims the escrow. 0.1% goes to the protocol as an operation fee; the rest goes to the issuer." },
             { title: "Renew when you want", body: "Renewing extends the license from its current expiry, so you never lose time you already paid for. Each renewal opens a new refund window for that payment." },
           ]}
@@ -111,7 +111,7 @@ export function HowItWorks() {
         <table className="table">
           <thead><tr><th>Role</th><th>Can</th></tr></thead>
           <tbody>
-            <tr><td style={{ whiteSpace: "nowrap" }}><Icon n="crown-simple" /> Master</td><td className="text-muted">Grant and revoke issuers. Receives the 0.1% operation fee.</td></tr>
+            <tr><td style={{ whiteSpace: "nowrap" }}><Icon n="crown-simple" /> Master</td><td className="text-muted">Sets the issuer fee and revokes issuers. Receives issuer fees and the 0.1% operation fee.</td></tr>
             <tr><td style={{ whiteSpace: "nowrap" }}><Icon n="stack" /> Issuer</td><td className="text-muted">Publish license types, change prices, pause sales and claim proceeds after refund windows close.</td></tr>
             <tr><td style={{ whiteSpace: "nowrap" }}><Icon n="user" /> Owner</td><td className="text-muted">Buy, renew and resign licenses. One license per type per wallet.</td></tr>
           </tbody>
@@ -139,7 +139,7 @@ export function ForIssuers() {
       <Section title="Getting started">
         <Steps
           items={[
-            { title: "Get approved", body: "The master account grants issuer rights to your wallet. Ask the operator of this deployment and share your public key." },
+            { title: "Buy issuer access", body: "Connect your wallet and click Become issuer. You pay a one-time issuer fee, set by the operator of this deployment, plus the account rent." },
             { title: "Create a license type", body: "Set a name, price in SOL, duration (a day, a month, a year or custom) and a resignation period in days. You pay a one-time rent deposit for the account." },
             { title: "Ship the check", body: "Derive the buyer's license address in your app and read its expiry. See the developer docs for a copy-paste snippet." },
             { title: "Claim your proceeds", body: "Open Payouts to see what's claimable now and what's still locked in refund windows. Renewals settle the previous payment automatically." },
@@ -169,13 +169,13 @@ export function ForIssuers() {
         </div>
       </Section>
 
-      <Cta title="Already approved?" body="Connect your issuer wallet and switch to the Issuer view to publish your first license type." />
+      <Cta title="Already an issuer?" body="Connect your issuer wallet and switch to the Issuer view to publish your first license type." />
     </Wrap>
   );
 }
 
 const ACCOUNTS: [string, string, string][] = [
-  ["Config", '["config"]', "master, fee_bps"],
+  ["Config", '["config"]', "master, fee_bps, issuer_fee_lamports"],
   ["Issuer", '["issuer", authority]', "authority, active"],
   ["LicenseType", '["type", issuer, id as u64 LE]', "issuer, id, price_lamports, duration_secs, resign_window_secs, active"],
   ["License", '["license", license_type, owner]', "license_type, owner, paid, resign_deadline, prev_expires_at, expires_at"],
@@ -183,13 +183,14 @@ const ACCOUNTS: [string, string, string][] = [
 
 const IXS: [string, string, string][] = [
   ["init_config", "anyone (once)", "Creates Config and makes the signer master."],
-  ["grant_issuer(wallet)", "master", "Creates an active Issuer for wallet."],
+  ["update_config(issuer_fee_lamports)", "master", "Sets the issuer fee."],
+  ["purchase_issuer", "anyone", "Pays the issuer fee to master and creates an active Issuer for the signer."],
   ["update_issuer(active)", "master", "Revokes or restores an issuer."],
   ["create_license_type(id, price, duration, window)", "issuer", "Publishes a new LicenseType."],
   ["update_license_type(price, duration, window, active)", "issuer", "Changes price or pauses sales."],
   ["purchase", "owner", "Creates License and escrows the price in it."],
   ["renew", "owner", "After the window: settles the previous payment, escrows a new one and extends from max(expiry, now)."],
-  ["resign", "owner", "Inside the window: refunds the escrow. Closes the account if it was the first period."],
+  ["resign", "owner", "Inside the window: refunds the escrow. The account stays on chain."],
   ["claim", "issuer", "After the window: pays escrow to the issuer minus the fee to master."],
 ];
 

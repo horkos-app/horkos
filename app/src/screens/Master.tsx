@@ -1,57 +1,40 @@
-import { useEffect, useMemo, useState } from "react";
-import { PublicKey } from "@solana/web3.js";
-import { configPda, DAY, explorerAddr, explorerTx, fetchFeeEvents, issuerPda, NETWORK_FEE, type FeeEvent, type IssuerAcc } from "../chain";
+import { useEffect, useState } from "react";
+import { BN } from "@anchor-lang/core";
+import { LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { configPda, DAY, explorerAddr, explorerTx, fetchFeeEvents, NETWORK_FEE, type FeeEvent, type IssuerAcc } from "../chain";
 import type { Ctx } from "../ctx";
 import { dt, initials, short, sol } from "../format";
 import { Dialog, Icon, PageHead } from "../ui";
 
-function GrantDialog({ ctx }: { ctx: Ctx }) {
-  const [addr, setAddr] = useState("");
-  const [label, setLabel] = useState("");
-  const wallet = useMemo(() => {
-    try {
-      return new PublicKey(addr.trim());
-    } catch {
-      return null;
-    }
-  }, [addr]);
-  const existing = wallet && ctx.chain.issuers.find((i) => i.authority.equals(wallet));
+function FeeDialog({ ctx }: { ctx: Ctx }) {
+  const cur = ctx.chain.cfg!.issuerFee;
+  const [v, setV] = useState(String(cur / LAMPORTS_PER_SOL));
+  const fee = Math.round(parseFloat(v) * LAMPORTS_PER_SOL);
   return (
     <Dialog
-      icon="user-plus"
-      title="Grant issuer privileges"
-      body="This wallet will be able to create license types, set their prices and claim payouts. You can revoke it at any time."
+      icon="coins"
+      title="Set issuer fee"
+      body="One-time price a wallet pays you to become a license issuer. Existing issuers are not affected."
       rows={[
-        { k: "Instruction", v: "grant_issuer" },
-        { k: "Issuer account rent", v: existing ? "already paid" : sol(ctx.chain.rents.issuer) + " SOL" },
+        { k: "Instruction", v: "update_config" },
+        { k: "Current fee", v: sol(cur) + " SOL" },
         { k: "Network fee", v: "≈ " + sol(NETWORK_FEE) + " SOL" },
       ]}
-      cta="Grant privileges"
-      disabled={!wallet || !!existing?.active}
+      cta="Update fee"
+      disabled={!(fee >= 0) || fee === cur}
       onClose={ctx.closeDlg}
-      confirm={() => {
-        if (!wallet) return;
-        const name = label.trim();
+      confirm={() =>
         ctx.runTx({
-          kicker: "Grant issuer",
-          title: name || "New issuer",
-          detail: short(wallet),
-          ixs: async () => [
-            await ctx.program.methods.grantIssuer(wallet).accountsPartial({ master: ctx.me, config: configPda(), issuer: issuerPda(wallet) }).instruction(),
-          ],
-          after: () => name && ctx.meta.setIssuer(wallet.toBase58(), name),
-        });
-      }}
+          kicker: "Issuer fee",
+          title: sol(fee) + " SOL",
+          detail: sol(cur) + " → " + sol(fee) + " SOL",
+          ixs: async () => [await ctx.program.methods.updateConfig(new BN(fee)).accountsPartial({ master: ctx.me, config: configPda() }).instruction()],
+        })
+      }
     >
       <div className="field">
-        <label>Wallet address</label>
-        <input className="input mono" style={{ fontSize: 13 }} placeholder="Base58 public key" value={addr} onChange={(e) => setAddr(e.target.value)} />
-        {addr.trim() && !wallet && <div style={{ fontSize: 12, color: "var(--color-accent-300)", marginTop: 6 }}>Not a valid public key.</div>}
-        {existing?.active && <div style={{ fontSize: 12, color: "var(--color-accent-300)", marginTop: 6 }}>This wallet is already an active issuer.</div>}
-      </div>
-      <div className="field">
-        <label>Label (stored off-chain, only visible to you)</label>
-        <input className="input" placeholder="e.g. Kettle Dev Tools" value={label} onChange={(e) => setLabel(e.target.value)} />
+        <label>Fee (SOL)</label>
+        <input className="input" value={v} onChange={(e) => setV(e.target.value)} inputMode="decimal" />
       </div>
     </Dialog>
   );
@@ -99,9 +82,9 @@ export function Issuers({ ctx }: { ctx: Ctx }) {
   return (
     <>
       <PageHead title="License issuers" sub="Wallets allowed to create license types and collect payouts.">
-        <button className="btn btn-primary" onClick={() => ctx.openDlg(<GrantDialog ctx={ctx} />)}>
-          <Icon n="user-plus" />
-          Grant issuer
+        <button className="btn btn-primary" onClick={() => ctx.openDlg(<FeeDialog ctx={ctx} />)}>
+          <Icon n="coins" />
+          Issuer fee: {sol(ctx.chain.cfg!.issuerFee)} SOL
         </button>
       </PageHead>
       <table className="table">
@@ -147,7 +130,7 @@ export function Issuers({ ctx }: { ctx: Ctx }) {
           })}
         </tbody>
       </table>
-      {!rows.length && <p className="text-muted">No issuers yet. Grant a wallet issuer privileges to get started.</p>}
+      {!rows.length && <p className="text-muted">No issuers yet. Wallets become issuers by paying the issuer fee.</p>}
     </>
   );
 }
