@@ -8,8 +8,8 @@ import {
   VersionedTransaction,
   type Finality,
 } from "@solana/web3.js";
-import idl from "../../../horkos/target/idl/horkos.json";
-import type { Horkos } from "../../../horkos/target/types/horkos";
+import idl from "../../target/idl/horkos.json";
+import type { Horkos } from "../../target/types/horkos";
 
 export const RPC_URL: string = import.meta.env.VITE_RPC_URL ?? "http://127.0.0.1:8899";
 export const CLUSTER: string =

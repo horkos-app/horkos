@@ -15,4 +15,4 @@ anchor deploy --provider.cluster localnet
 
 cd app
 [ -d node_modules ] || npm install
-npx next dev
+npm run dev
