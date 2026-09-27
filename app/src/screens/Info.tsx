@@ -244,37 +244,13 @@ export function ForIssuers() {
   );
 }
 
-const ACCOUNTS: [string, string, string, string][] = [
-  ["Config", '["config"]', "master, fee_bps, issuer_fee_lamports, bump", "51"],
-  ["Issuer", '["issuer", authority]', "authority, active, bump, name (≤ 64 bytes)", "110"],
-  ["LicenseType", '["type", issuer, id as u64 LE]', "issuer, id, price_lamports, duration_secs, resign_window_secs, active, bump, name (≤ 64 bytes), description (≤ 256 bytes)", "402"],
-  ["License", '["license", license_type, owner]', "license_type, owner, paid, resign_deadline, prev_expires_at, expires_at, resigned, bump", "106"],
-];
-
-const IXS: [string, string, string][] = [
-  ["init_config", "upgrade authority (once)", "Creates Config and makes the signer master."],
-  ["update_config(issuer_fee_lamports)", "master", "Sets the issuer fee."],
-  ["purchase_issuer(name)", "anyone", "Pays the issuer fee to master and creates an active Issuer for the signer. The name can't be changed later."],
-  ["update_issuer(active)", "master", "Revokes or restores an issuer."],
-  ["create_license_type(id, price, duration, window, name, description)", "issuer", "Publishes a new LicenseType. Requires 0 ≤ window ≤ duration; a window of 0 means no refunds."],
-  ["update_license_type(price, duration, window, active, name, description)", "issuer", "Replaces the terms, name and description, or pauses sales. Licenses already sold keep their current period."],
-  ["purchase", "owner", "Creates License and escrows the price in it. resign_deadline = now + window, expires_at = now + duration."],
-  ["renew", "owner", "Once now ≥ resign_deadline: settles any unclaimed payment (emits FeePaid), escrows the current price and extends from max(expiry, now)."],
-  ["resign", "owner", "While now < resign_deadline: refunds the escrow and reverts expires_at to prev_expires_at. Once per license; the account stays on chain."],
-  ["claim", "issuer", "Once now ≥ resign_deadline: pays escrow to the issuer minus the fee to master (emits FeePaid)."],
-];
-
-const ERRORS: [string, string][] = [
-  ["Unauthorized", "Signer is not authorized for this action"],
-  ["IssuerInactive", "Issuer is not active"],
-  ["ResignWindowOpen", "Resign window is still open"],
-  ["ResignWindowClosed", "Resign window has closed"],
-  ["NothingToClaim", "No escrow to claim"],
-  ["Overflow", "Arithmetic overflow"],
-  ["InvalidParams", "Invalid license type parameters"],
-  ["LicenseTypeInactive", "License type is not active"],
-  ["TextTooLong", "Name or description too long"],
-];
+const Lang = ({ name, install, code }: { name: string; install: string; code: string }) => (
+  <div className="card elev-sm" style={{ padding: "var(--space-6)", gap: "var(--space-3)", minWidth: 0 }}>
+    <div className="card-title">{name}</div>
+    <div className="mono text-muted" style={{ fontSize: 12 }}>{install}</div>
+    <Code>{code}</Code>
+  </div>
+);
 
 export function DevDocs() {
   const pid = PROGRAM_ID.toBase58();
@@ -284,8 +260,70 @@ export function DevDocs() {
       title="Verify a license in one RPC call."
       sub={<>Everything lives in program <span className="mono" style={{ fontSize: 14 }}>{pid}</span>. There's no API to call — derive the address, read the account, compare the expiry.</>}
     >
-      <Section title="Check a license" sub="The License account is a PDA of the license type and the owner's wallet. expires_at is an i64 Unix timestamp at byte offset 96. A resigned license reverts it to the previous expiry, so the same check covers refunds. Indefinite licenses simply expire about 1000 years out.">
-        <Code>{`import { Connection, PublicKey } from "@solana/web3.js";
+      <Section title="Check a license" sub='The License account is a PDA of ["license", license type, owner wallet]. expires_at is a little-endian i64 Unix timestamp at byte offset 96.'>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(420px,100%),1fr))", gap: "var(--space-6)" }}>
+          <Lang
+            name="Rust"
+            install="cargo add solana-client solana-sdk"
+            code={`use solana_client::rpc_client::RpcClient;
+use solana_sdk::{pubkey, pubkey::Pubkey};
+use std::time::{SystemTime, UNIX_EPOCH};
+
+const PROGRAM_ID: Pubkey = pubkey!("${pid}");
+
+pub fn has_license(rpc: &RpcClient, license_type: &Pubkey, owner: &Pubkey) -> bool {
+    let (pda, _) = Pubkey::find_program_address(
+        &[b"license", license_type.as_ref(), owner.as_ref()],
+        &PROGRAM_ID,
+    );
+    let Ok(acc) = rpc.get_account(&pda) else { return false };
+    if acc.owner != PROGRAM_ID {
+        return false;
+    }
+    let expires_at = i64::from_le_bytes(acc.data[96..104].try_into().unwrap());
+    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as i64;
+    expires_at > now
+}`}
+          />
+          <Lang
+            name="Go"
+            install="go get github.com/gagliardetto/solana-go"
+            code={`import (
+	"context"
+	"encoding/binary"
+	"errors"
+	"time"
+
+	"github.com/gagliardetto/solana-go"
+	"github.com/gagliardetto/solana-go/rpc"
+)
+
+var programID = solana.MustPublicKeyFromBase58("${pid}")
+
+func HasLicense(ctx context.Context, client *rpc.Client, licenseType, owner solana.PublicKey) (bool, error) {
+	pda, _, err := solana.FindProgramAddress(
+		[][]byte{[]byte("license"), licenseType.Bytes(), owner.Bytes()}, programID)
+	if err != nil {
+		return false, err
+	}
+	res, err := client.GetAccountInfo(ctx, pda)
+	if errors.Is(err, rpc.ErrNotFound) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	if !res.Value.Owner.Equals(programID) {
+		return false, nil
+	}
+	expiresAt := int64(binary.LittleEndian.Uint64(res.Value.Data.GetBinary()[96:104]))
+	return expiresAt > time.Now().Unix(), nil
+}`}
+          />
+          <Lang
+            name="TypeScript"
+            install="npm i @solana/web3.js"
+            code={`import { Connection, PublicKey } from "@solana/web3.js";
 
 const PROGRAM_ID = new PublicKey("${pid}");
 const seed = (s: string) => new TextEncoder().encode(s);
@@ -299,87 +337,37 @@ export async function hasLicense(conn: Connection, licenseType: PublicKey, owner
   if (!acc || !acc.owner.equals(PROGRAM_ID)) return false;
   const expiresAt = new DataView(acc.data.buffer, acc.data.byteOffset).getBigInt64(96, true);
   return Number(expiresAt) > Date.now() / 1000;
-}`}</Code>
-        <p className="text-muted" style={{ fontSize: 13, margin: 0 }}>
-          Using Anchor? Load the IDL and call <span className="mono">program.account.license.fetchNullable(pda)</span> instead of decoding by offset.
-        </p>
+}`}
+          />
+          <Lang
+            name="Java"
+            install="Maven: com.mmorrell:solanaj"
+            code={`import org.p2p.solanaj.core.PublicKey;
+import org.p2p.solanaj.rpc.RpcClient;
+import org.p2p.solanaj.rpc.types.AccountInfo;
+
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.Base64;
+import java.util.List;
+
+public class Horkos {
+    static final PublicKey PROGRAM_ID = new PublicKey("${pid}");
+
+    public static boolean hasLicense(RpcClient client, PublicKey licenseType, PublicKey owner) throws Exception {
+        PublicKey pda = PublicKey.findProgramAddress(
+            List.of("license".getBytes(), licenseType.toByteArray(), owner.toByteArray()),
+            PROGRAM_ID).getAddress();
+        AccountInfo acc = client.getApi().getAccountInfo(pda);
+        if (acc.getValue() == null || !PROGRAM_ID.toBase58().equals(acc.getValue().getOwner())) return false;
+        byte[] data = Base64.getDecoder().decode(acc.getValue().getData().get(0));
+        long expiresAt = ByteBuffer.wrap(data, 96, 8).order(ByteOrder.LITTLE_ENDIAN).getLong();
+        return expiresAt > System.currentTimeMillis() / 1000;
+    }
+}`}
+          />
+        </div>
       </Section>
-
-      <Section title="Check the connected wallet" sub="No backend needed. Connect the user's wallet in your app and run the check above with its address. Issuers can copy a license type address from its card on the License types page.">
-        <Code>{`import { Connection, PublicKey } from "@solana/web3.js";
-import { hasLicense } from "./hasLicense";
-
-const LICENSE_TYPE = new PublicKey("<license type address>");
-const connection = new Connection("<rpc endpoint>");
-
-const wallet = window.phantom?.solana ?? window.solana;
-const { publicKey } = await wallet.connect();
-
-if (await hasLicense(connection, LICENSE_TYPE, publicKey)) {
-  unlockApp();
-}`}</Code>
-      </Section>
-
-      <Section title="Find a license type address">
-        <Code>{`const [issuer] = PublicKey.findProgramAddressSync(
-  [Buffer.from("issuer"), issuerWallet.toBuffer()], PROGRAM_ID);
-
-const id = Buffer.alloc(8);
-id.writeBigUInt64LE(BigInt(typeId));
-const [licenseType] = PublicKey.findProgramAddressSync(
-  [Buffer.from("type"), issuer.toBuffer(), id], PROGRAM_ID);`}</Code>
-      </Section>
-
-      <Section title="Accounts">
-        <table className="table">
-          <thead><tr><th>Account</th><th>Seeds</th><th>Fields</th><th>Size (bytes)</th></tr></thead>
-          <tbody>
-            {ACCOUNTS.map(([a, s, f, b]) => (
-              <tr key={a}><td>{a}</td><td className="mono" style={{ fontSize: 12 }}>{s}</td><td className="text-muted" style={{ fontSize: 13 }}>{f}</td><td className="mono" style={{ fontSize: 12 }}>{b}</td></tr>
-            ))}
-          </tbody>
-        </table>
-      </Section>
-
-      <Section title="Instructions">
-        <table className="table">
-          <thead><tr><th>Instruction</th><th>Signer</th><th>Effect</th></tr></thead>
-          <tbody>
-            {IXS.map(([i, s, e]) => (
-              <tr key={i}><td className="mono" style={{ fontSize: 12 }}>{i}</td><td style={{ whiteSpace: "nowrap" }}>{s}</td><td className="text-muted" style={{ fontSize: 13 }}>{e}</td></tr>
-            ))}
-          </tbody>
-        </table>
-      </Section>
-
-      <Section title="Events" sub="claim and renew emit FeePaid whenever escrow is settled. It's written to the transaction logs, so you can read exact fees from transaction history without comparing balances. amount is the escrow settled and fee is the part of it paid to master, both in lamports.">
-        <Code>{`#[event]
-pub struct FeePaid {
-    pub license: Pubkey,
-    pub license_type: Pubkey,
-    pub amount: u64,
-    pub fee: u64,
-}`}</Code>
-        <Code>{`import { EventParser } from "@anchor-lang/core";
-
-const parser = new EventParser(program.programId, program.coder);
-for (const e of parser.parseLogs(tx.meta.logMessages ?? [])) {
-  if (e.name === "feePaid") console.log(e.data.licenseType.toBase58(), e.data.amount.toString(), e.data.fee.toString());
-}`}</Code>
-      </Section>
-
-      <Section title="Errors">
-        <table className="table">
-          <thead><tr><th>Code</th><th>Message</th></tr></thead>
-          <tbody>
-            {ERRORS.map(([c, m]) => (
-              <tr key={c}><td className="mono" style={{ fontSize: 12 }}>{c}</td><td className="text-muted" style={{ fontSize: 13 }}>{m}</td></tr>
-            ))}
-          </tbody>
-        </table>
-      </Section>
-
-      <Cta title="Want to test against real data?" body="Connect a wallet to buy a license on this cluster, then point the snippet above at it." />
     </Wrap>
   );
 }
