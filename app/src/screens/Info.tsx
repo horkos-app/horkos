@@ -288,20 +288,36 @@ export function DevDocs() {
         <Code>{`import { Connection, PublicKey } from "@solana/web3.js";
 
 const PROGRAM_ID = new PublicKey("${pid}");
+const seed = (s: string) => new TextEncoder().encode(s);
 
 export async function hasLicense(conn: Connection, licenseType: PublicKey, owner: PublicKey) {
   const [pda] = PublicKey.findProgramAddressSync(
-    [Buffer.from("license"), licenseType.toBuffer(), owner.toBuffer()],
+    [seed("license"), licenseType.toBytes(), owner.toBytes()],
     PROGRAM_ID,
   );
   const acc = await conn.getAccountInfo(pda);
   if (!acc || !acc.owner.equals(PROGRAM_ID)) return false;
-  const expiresAt = Number(acc.data.readBigInt64LE(96));
-  return expiresAt > Date.now() / 1000;
+  const expiresAt = new DataView(acc.data.buffer, acc.data.byteOffset).getBigInt64(96, true);
+  return Number(expiresAt) > Date.now() / 1000;
 }`}</Code>
         <p className="text-muted" style={{ fontSize: 13, margin: 0 }}>
           Using Anchor? Load the IDL and call <span className="mono">program.account.license.fetchNullable(pda)</span> instead of decoding by offset.
         </p>
+      </Section>
+
+      <Section title="Check the connected wallet" sub="No backend needed. Connect the user's wallet in your app and run the check above with its address. Issuers can copy a license type address from its card on the License types page.">
+        <Code>{`import { Connection, PublicKey } from "@solana/web3.js";
+import { hasLicense } from "./hasLicense";
+
+const LICENSE_TYPE = new PublicKey("<license type address>");
+const connection = new Connection("<rpc endpoint>");
+
+const wallet = window.phantom?.solana ?? window.solana;
+const { publicKey } = await wallet.connect();
+
+if (await hasLicense(connection, LICENSE_TYPE, publicKey)) {
+  unlockApp();
+}`}</Code>
       </Section>
 
       <Section title="Find a license type address">
