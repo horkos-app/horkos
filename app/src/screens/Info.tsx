@@ -10,9 +10,9 @@ export const PAGES: { k: Page; label: string }[] = [
   { k: "docs", label: "Developer docs" },
 ];
 
-const Wrap = ({ kicker, title, sub, children }: { kicker: string; title: string; sub: ReactNode; children: ReactNode }) => (
+const Wrap = ({ kicker, title, sub, wide, children }: { kicker: string; title: string; sub: ReactNode; wide?: boolean; children: ReactNode }) => (
   <main style={{ flex: 1, width: "100%", maxWidth: 1080, margin: "0 auto", padding: "calc(var(--space-8)*2) var(--space-8) calc(var(--space-8)*3)", display: "flex", flexDirection: "column", gap: "calc(var(--space-8)*1.5)", boxSizing: "border-box" }}>
-    <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)", maxWidth: 720 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)", maxWidth: wide ? undefined : 720 }}>
       <div className="card-kicker">{kicker}</div>
       <h1 style={{ margin: 0, textWrap: "balance" }}>{title}</h1>
       <p className="text-muted" style={{ fontSize: 17, margin: 0, textWrap: "pretty" }}>{sub}</p>
@@ -21,11 +21,11 @@ const Wrap = ({ kicker, title, sub, children }: { kicker: string; title: string;
   </main>
 );
 
-const Section = ({ title, sub, children }: { title: string; sub?: ReactNode; children: ReactNode }) => (
+const Section = ({ title, sub, wide, children }: { title: string; sub?: ReactNode; wide?: boolean; children: ReactNode }) => (
   <section style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
     <div>
       <h3 style={{ margin: 0 }}>{title}</h3>
-      {sub && <p className="text-muted" style={{ margin: "var(--space-2) 0 0", maxWidth: 720 }}>{sub}</p>}
+      {sub && <p className="text-muted" style={{ margin: "var(--space-2) 0 0", maxWidth: wide ? undefined : 720 }}>{sub}</p>}
     </div>
     {children}
   </section>
@@ -275,9 +275,10 @@ export function DevDocs() {
     <Wrap
       kicker="Developer docs"
       title="Verify a license in one RPC call."
+      wide
       sub={<>Everything lives in program <span className="mono" style={{ fontSize: 14 }}>{pid}</span>. There's no API to call — derive the address, read the account, compare the expiry.</>}
     >
-      <Section title="Check a license" sub='The License account is a PDA of ["license", license type, owner wallet]. expires_at is a little-endian i64 Unix timestamp at byte offset 96.'>
+      <Section title="Check a license" wide sub='The License account is a PDA of ["license", license type, owner wallet]. expires_at is a little-endian i64 Unix timestamp at byte offset 96.'>
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-6)" }}>
           <Lang
             name="Rust"
