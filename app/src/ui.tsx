@@ -6,6 +6,18 @@ export const Icon = ({ n, size, style, spin }: { n: string; size?: number; style
   <i className={"ph ph-" + n + (spin ? " spin" : "")} style={{ fontSize: size, ...style }} />
 );
 
+export const Linkify = ({ text }: { text: string }) => (
+  <>
+    {text.split(/((?:https?:\/\/|www\.)\S*[^\s.,;:!?)"'])/gi).map((part, i) =>
+      i % 2 ? (
+        <a key={i} href={/^www\./i.test(part) ? "https://" + part : part} target="_blank" rel="noopener noreferrer">{part}</a>
+      ) : (
+        part
+      ),
+    )}
+  </>
+);
+
 export const PageHead = ({ title, sub, children }: { title: string; sub: ReactNode; children?: ReactNode }) => (
   <div style={{ display: "flex", alignItems: "flex-end", gap: "var(--space-6)" }}>
     <div style={{ flex: 1 }}>

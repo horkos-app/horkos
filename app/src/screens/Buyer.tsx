@@ -2,7 +2,7 @@ import { useState } from "react";
 import { configPda, DAY, explorerAddr, licensePda, NETWORK_FEE, type LicenseAcc, type TypeAcc } from "../chain";
 import type { Ctx } from "../ctx";
 import { dt, isIndefinite, period, short, sol, span } from "../format";
-import { Bar, Dialog, Icon, PageHead, Seg, Stat } from "../ui";
+import { Bar, Dialog, Icon, Linkify, PageHead, Seg, Stat } from "../ui";
 
 function buy(ctx: Ctx, t: TypeAcc) {
   const iss = ctx.issuerOf(t)!;
@@ -72,7 +72,7 @@ export function Browse({ ctx }: { ctx: Ctx }) {
               </div>
               <div>
                 <div className="card-title">{t.name}</div>
-                <p className="card-body" style={{ marginTop: "var(--space-2)" }}>{t.desc}</p>
+                <p className="card-body" style={{ marginTop: "var(--space-2)" }}><Linkify text={t.desc} /></p>
               </div>
               <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginTop: "auto" }}>
                 <span style={{ fontSize: 28, fontWeight: 500, letterSpacing: "-0.02em" }}>{sol(t.price)}</span>

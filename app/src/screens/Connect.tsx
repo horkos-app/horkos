@@ -4,7 +4,7 @@ import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import type { Connection } from "@solana/web3.js";
 import { DAY, fetchChain, makeProgram } from "../chain";
 import { initials, period, short, sol, span } from "../format";
-import { Icon } from "../ui";
+import { Icon, Linkify } from "../ui";
 
 type Popular = { issuer: string; name: string; desc: string; price: number; duration: number; resign: number; holders: number; pda: string };
 
@@ -100,7 +100,7 @@ export function Connect() {
             <span className="tag tag-accent">{front.holders} active licenses</span>
           </div>
           <div className="card-title" style={{ fontSize: 24 }}>{front.name}</div>
-          {front.desc && <p className="card-body" style={{ margin: 0 }}>{front.desc}</p>}
+          {front.desc && <p className="card-body" style={{ margin: 0 }}><Linkify text={front.desc} /></p>}
           <div style={{ display: "flex", gap: "var(--space-8)", fontSize: 13 }}>
             <div><div className="text-muted" style={{ fontSize: 11 }}>Price</div><div>{sol(front.price)} SOL / {period(front.duration)}</div></div>
             <div><div className="text-muted" style={{ fontSize: 11 }}>Refund window</div><div>{front.resign ? span(front.resign) : "None"}</div></div>

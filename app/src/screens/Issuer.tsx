@@ -4,7 +4,7 @@ import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { configPda, DAY, fetchFeeEvents, issuerPda, NETWORK_FEE, typePda, type LicenseAcc } from "../chain";
 import type { Ctx } from "../ctx";
 import { dt, INDEFINITE, period, short, sol, span } from "../format";
-import { Dialog, Icon, PageHead, Seg } from "../ui";
+import { Dialog, Icon, Linkify, PageHead, Seg } from "../ui";
 
 const bytes = (s: string) => new TextEncoder().encode(s).length;
 
@@ -76,7 +76,7 @@ export function Types({ ctx }: { ctx: Ctx }) {
               </div>
               <div>
                 <div className="card-title">{t.name}</div>
-                <p className="card-body" style={{ marginTop: "var(--space-2)" }}>{t.desc || <span className="text-muted">No description</span>}</p>
+                <p className="card-body" style={{ marginTop: "var(--space-2)" }}>{t.desc ? <Linkify text={t.desc} /> : <span className="text-muted">No description</span>}</p>
               </div>
               <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
                 <span style={{ fontSize: 28, fontWeight: 500, letterSpacing: "-0.02em" }}>{sol(t.price)}</span>
@@ -234,7 +234,7 @@ export function Editor({ ctx }: { ctx: Ctx }) {
           <div className="card elev-md" style={{ padding: "var(--space-6)", gap: "var(--space-4)" }}>
             <span className="card-kicker">{ctx.issuerName(iss)}</span>
             <div className="card-title" style={{ fontSize: 20 }}>{f.name || "Untitled license"}</div>
-            <p className="card-body">{f.desc || "Description shown to buyers."}</p>
+            <p className="card-body">{f.desc ? <Linkify text={f.desc} /> : "Description shown to buyers."}</p>
             <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
               <span style={{ fontSize: 28, fontWeight: 500 }}>{sol(safePrice)}</span>
               <span className="text-muted">SOL / {period(durSecs)}</span>
