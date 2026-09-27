@@ -40,6 +40,41 @@ function FeeDialog({ ctx }: { ctx: Ctx }) {
   );
 }
 
+function FeeRateDialog({ ctx }: { ctx: Ctx }) {
+  const cur = ctx.chain.cfg!.feeBps;
+  const [v, setV] = useState(String(cur / 100));
+  const bps = Math.round(parseFloat(v) * 100);
+  const pct = (b: number) => (b / 100).toLocaleString("en-US") + "%";
+  return (
+    <Dialog
+      icon="percent"
+      title="Set operation fee"
+      body="Share of every sale and renewal paid to the master wallet. Applies to every settlement from now on, including escrow already held."
+      rows={[
+        { k: "Instruction", v: "update_fee" },
+        { k: "Current rate", v: pct(cur) },
+        { k: "Network fee", v: "≈ " + sol(NETWORK_FEE) + " SOL" },
+      ]}
+      cta="Update fee"
+      disabled={!(bps >= 0 && bps <= 10_000) || bps === cur}
+      onClose={ctx.closeDlg}
+      confirm={() =>
+        ctx.runTx({
+          kicker: "Operation fee",
+          title: pct(bps),
+          detail: pct(cur) + " → " + pct(bps),
+          ixs: async () => [await ctx.program.methods.updateFee(bps).accountsPartial({ master: ctx.me, config: configPda() }).instruction()],
+        })
+      }
+    >
+      <div className="field">
+        <label>Fee (%)</label>
+        <input className="input" value={v} onChange={(e) => setV(e.target.value)} inputMode="decimal" />
+      </div>
+    </Dialog>
+  );
+}
+
 function toggleIssuer(ctx: Ctx, i: IssuerAcc) {
   const rv = i.active;
   const name = ctx.issuerName(i);
@@ -167,7 +202,12 @@ export function Fees({ ctx }: { ctx: Ctx }) {
 
   return (
     <>
-      <PageHead title="Operation fees" sub={(cfg.feeBps / 100).toLocaleString("en-US") + "% of every sale and renewal, paid to the master wallet when escrow is settled."} />
+      <PageHead title="Operation fees" sub={(cfg.feeBps / 100).toLocaleString("en-US") + "% of every sale and renewal, paid to the master wallet when escrow is settled."}>
+        <button className="btn btn-primary" onClick={() => ctx.openDlg(<FeeRateDialog ctx={ctx} />)}>
+          <Icon n="percent" />
+          Fee rate: {(cfg.feeBps / 100).toLocaleString("en-US")}%
+        </button>
+      </PageHead>
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,2fr)", gap: "var(--space-8)", alignItems: "stretch" }}>
         <div className="card" style={{ padding: "var(--space-6)", gap: "var(--space-4)" }}>
           <span className="card-kicker">Collected, recent history</span>

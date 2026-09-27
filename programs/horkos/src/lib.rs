@@ -23,6 +23,10 @@ pub mod horkos {
         crate::instructions::update_config::handle_update_config(ctx, issuer_fee_lamports)
     }
 
+    pub fn update_fee(ctx: Context<UpdateConfig>, fee_bps: u16) -> Result<()> {
+        crate::instructions::update_config::handle_update_fee(ctx, fee_bps)
+    }
+
     pub fn purchase_issuer(ctx: Context<PurchaseIssuer>, name: String) -> Result<()> {
         crate::instructions::purchase_issuer::handle_purchase_issuer(ctx, name)
     }

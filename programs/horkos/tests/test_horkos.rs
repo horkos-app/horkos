@@ -153,6 +153,15 @@ impl Env {
         send(&mut self.svm, ix::UpdateConfig { issuer_fee_lamports }, accounts, by)
     }
 
+    fn update_fee(&mut self, by: Option<&Keypair>, fee_bps: u16) -> TransactionResult {
+        let by = by.unwrap_or(&self.master);
+        let accounts = acc::UpdateConfig {
+            master: by.pubkey(),
+            config: config_pda(),
+        };
+        send(&mut self.svm, ix::UpdateFee { fee_bps }, accounts, by)
+    }
+
     fn buy_issuer(&mut self, master: Option<Pubkey>) -> TransactionResult {
         let accounts = acc::PurchaseIssuer {
             authority: self.issuer.pubkey(),
@@ -301,6 +310,21 @@ fn update_config_rejects_non_master() {
     let mut env = Env::new();
     let stranger = env.stranger();
     fails(env.update_config(Some(&stranger), 0), "Unauthorized");
+}
+
+#[test]
+fn update_fee_changes_fee_bps() {
+    let mut env = Env::new();
+    ok(env.update_fee(None, 100));
+    assert_eq!(env.read::<Config>(config_pda()).fee_bps, 100);
+    fails(env.update_fee(None, 10_001), "InvalidParams");
+}
+
+#[test]
+fn update_fee_rejects_non_master() {
+    let mut env = Env::new();
+    let stranger = env.stranger();
+    fails(env.update_fee(Some(&stranger), 100), "Unauthorized");
 }
 
 #[test]
