@@ -58,9 +58,24 @@ const Steps = ({ items }: { items: { title: string; body: ReactNode }[] }) => (
   </ol>
 );
 
+const HL = /(b?"(?:[^"\\]|\\.)*")|\b(\d+)\b|\b(use|const|pub|fn|let|mut|as|else|return|if|import|export|from|async|await|new|var|func|static|final|class|public|throws|true|false|null|nil)\b|\b([A-Z]\w*|i64|u8|bool|long|byte|boolean|int64|string|error|number)\b|\b(\w+)(?=\()/g;
+const HL_COLORS = ["#a5e0a0", "#f5b97a", "var(--color-accent-300)", "#7dd3fc", "#f7e08b"];
+
+function highlight(code: string) {
+  const out: ReactNode[] = [];
+  let last = 0;
+  for (const m of code.matchAll(HL)) {
+    out.push(code.slice(last, m.index));
+    out.push(<span key={m.index} style={{ color: HL_COLORS[m.slice(1).findIndex(Boolean)] }}>{m[0]}</span>);
+    last = m.index + m[0].length;
+  }
+  out.push(code.slice(last));
+  return out;
+}
+
 const Code = ({ children }: { children: string }) => (
-  <pre className="mono" style={{ margin: 0, padding: "var(--space-4) var(--space-6)", borderRadius: "var(--radius-md)", background: "var(--color-surface)", boxShadow: "var(--shadow-sm)", fontSize: 13, lineHeight: 1.6, overflowX: "auto" }}>
-    {children}
+  <pre className="mono" style={{ flex: 1, margin: 0, padding: "var(--space-4) var(--space-6)", borderRadius: "var(--radius-md)", background: "var(--color-bg)", fontSize: 13, lineHeight: 1.6, overflowX: "auto", overflowY: "hidden" }}>
+    {highlight(children)}
   </pre>
 );
 
@@ -244,9 +259,12 @@ export function ForIssuers() {
   );
 }
 
-const Lang = ({ name, install, code }: { name: string; install: string; code: string }) => (
+const Lang = ({ name, icon, install, code }: { name: string; icon: string; install: string; code: string }) => (
   <div className="card elev-sm" style={{ padding: "var(--space-6)", gap: "var(--space-3)", minWidth: 0 }}>
-    <div className="card-title">{name}</div>
+    <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
+      <img src={`https://cdn.jsdelivr.net/npm/devicon@2/icons/${icon}.svg`} alt="" width={28} height={28} style={icon.startsWith("rust") ? { filter: "invert(1)" } : undefined} />
+      <div className="card-title">{name}</div>
+    </div>
     <div className="mono text-muted" style={{ fontSize: 12 }}>{install}</div>
     <Code>{code}</Code>
   </div>
@@ -261,9 +279,10 @@ export function DevDocs() {
       sub={<>Everything lives in program <span className="mono" style={{ fontSize: 14 }}>{pid}</span>. There's no API to call — derive the address, read the account, compare the expiry.</>}
     >
       <Section title="Check a license" sub='The License account is a PDA of ["license", license type, owner wallet]. expires_at is a little-endian i64 Unix timestamp at byte offset 96.'>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(420px,100%),1fr))", gap: "var(--space-6)" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(420px,100%),1fr))", gridAutoRows: "1fr", gap: "var(--space-6)" }}>
           <Lang
             name="Rust"
+            icon="rust/rust-original"
             install="cargo add solana-client solana-sdk"
             code={`use solana_client::rpc_client::RpcClient;
 use solana_sdk::{pubkey, pubkey::Pubkey};
@@ -287,6 +306,7 @@ pub fn has_license(rpc: &RpcClient, license_type: &Pubkey, owner: &Pubkey) -> bo
           />
           <Lang
             name="Go"
+            icon="go/go-original-wordmark"
             install="go get github.com/gagliardetto/solana-go"
             code={`import (
 	"context"
@@ -322,6 +342,7 @@ func HasLicense(ctx context.Context, client *rpc.Client, licenseType, owner sola
           />
           <Lang
             name="TypeScript"
+            icon="typescript/typescript-original"
             install="npm i @solana/web3.js"
             code={`import { Connection, PublicKey } from "@solana/web3.js";
 
@@ -341,6 +362,7 @@ export async function hasLicense(conn: Connection, licenseType: PublicKey, owner
           />
           <Lang
             name="Java"
+            icon="java/java-original"
             install="Maven: com.mmorrell:solanaj"
             code={`import org.p2p.solanaj.core.PublicKey;
 import org.p2p.solanaj.rpc.RpcClient;
