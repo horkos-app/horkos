@@ -7,7 +7,7 @@ import { Bar, Dialog, Icon, Linkify, PageHead, Seg, Stat } from "../ui";
 function buy(ctx: Ctx, t: TypeAcc) {
   const iss = ctx.issuerOf(t)!;
   const name = ctx.typeName(t);
-  const feePct = ((ctx.chain.cfg?.feeBps ?? 10) / 100).toLocaleString("en-US");
+  const feePct = ((ctx.chain.cfg?.feeBps ?? 100) / 100).toLocaleString("en-US");
   ctx.openDlg(
     <Dialog
       icon="shopping-bag"

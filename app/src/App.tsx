@@ -318,7 +318,7 @@ function Setup({ ctx }: { ctx: Ctx }) {
       <span className="card-kicker">First run</span>
       <div className="card-title" style={{ fontSize: 22 }}>Initialize the license program</div>
       <p className="card-body">
-        The program at <span className="mono">{short(PROGRAM_ID)}</span> has no configuration yet. Only the program's upgrade authority can initialize; doing so makes it the master account: it sets the issuer fee, can revoke issuers, and receives issuer fees and the 0.1% operation fee.
+        The program at <span className="mono">{short(PROGRAM_ID)}</span> has no configuration yet. Only the program's upgrade authority can initialize; doing so makes it the master account: it sets the issuer fee, can revoke issuers, and receives issuer fees and the 1% operation fee.
       </p>
       <button
         className="btn btn-primary"

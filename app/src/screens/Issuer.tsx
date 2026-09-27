@@ -136,7 +136,7 @@ export function Editor({ ctx }: { ctx: Ctx }) {
   const metaChanged = !!editing && (f.name.trim() !== m0.name || f.desc.trim() !== m0.desc);
   const durOpts = [...new Set([...DURS, ...(editing ? [editing.duration / DAY] : [])])].sort((a, b) => a - b);
   const safePrice = price > 0 ? price : 0;
-  const fee = Math.floor((safePrice * (ctx.chain.cfg?.feeBps ?? 10)) / 10_000);
+  const fee = Math.floor((safePrice * (ctx.chain.cfg?.feeBps ?? 100)) / 10_000);
   const sold = editing ? ctx.licensesOf(editing).length : 0;
 
   const save = () => {
@@ -249,7 +249,7 @@ export function Editor({ ctx }: { ctx: Ctx }) {
               <span>{sol(safePrice - fee)} SOL</span>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span className="text-muted">Operation fee ({((ctx.chain.cfg?.feeBps ?? 10) / 100).toLocaleString("en-US")}%)</span>
+              <span className="text-muted">Operation fee ({((ctx.chain.cfg?.feeBps ?? 100) / 100).toLocaleString("en-US")}%)</span>
               <span>{sol(fee)} SOL</span>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between" }}>

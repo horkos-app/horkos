@@ -123,7 +123,7 @@ export function HowItWorks() {
             { title: "Pick a license", body: "Browse license types from active issuers. Each one shows its price, how long it lasts (a set period or indefinite) and its refund window. Some issuers offer no refunds." },
             { title: "Buy with your wallet", body: "One transaction creates a license account tied to your wallet and holds your payment in escrow inside it. The issuer can't touch the money until the refund window closes." },
             { title: "Change your mind", body: "Before the refund window closes you can resign and get the full price back. A new license ends straight away; a renewal falls back to its previous expiry. You only get one resignation per license, and the account rent and network fee aren't refunded." },
-            { title: "Issuer gets paid", body: "Once the window closes, the issuer claims the escrow. 0.1% of it goes to the protocol as an operation fee, taken from the issuer's share, not added to your price." },
+            { title: "Issuer gets paid", body: "Once the window closes, the issuer claims the escrow. 1% of it goes to the protocol as an operation fee, taken from the issuer's share, not added to your price." },
             { title: "Renew when you want", body: "After the refund window you can renew at the issuer's current price and duration. The new period starts at your current expiry, so you never lose time you already paid for. Each renewal gets its own refund window, unless you've already resigned from this license." },
           ]}
         />
@@ -157,7 +157,7 @@ export function HowItWorks() {
           <Feature icon="arrow-counter-clockwise" title="Refunds are enforced">The program, not the seller, decides refunds. Until the window closes, the money is still yours.</Feature>
           <Feature icon="magnifying-glass" title="Free verification">Checking a license is a read of a public account. No license server, API key or lookup fee.</Feature>
           <Feature icon="lock-simple" title="Terms can't change under you">If the issuer changes the price, duration or refund window, your current period keeps its terms. The new terms apply only when you renew.</Feature>
-          <Feature icon="coins" title="Tiny, visible fee">A flat 0.1% on each settled sale or renewal, paid by the issuer and taken on-chain where anyone can audit it.</Feature>
+          <Feature icon="coins" title="Small, visible fee">A flat 1% on each settled sale or renewal, paid by the issuer and taken on-chain where anyone can audit it.</Feature>
         </Grid>
       </Section>
 
@@ -165,7 +165,7 @@ export function HowItWorks() {
         <table className="table">
           <thead><tr><th>Role</th><th>Can</th></tr></thead>
           <tbody>
-            <tr><td style={{ whiteSpace: "nowrap" }}><Icon n="crown-simple" /> Master</td><td className="text-muted">Sets the issuer fee and revokes issuers. Receives issuer fees and the 0.1% operation fee.</td></tr>
+            <tr><td style={{ whiteSpace: "nowrap" }}><Icon n="crown-simple" /> Master</td><td className="text-muted">Sets the issuer fee and revokes issuers. Receives issuer fees and the 1% operation fee.</td></tr>
             <tr><td style={{ whiteSpace: "nowrap" }}><Icon n="stack" /> Issuer</td><td className="text-muted">Publish license types, change their terms, pause sales and claim proceeds after refund windows close.</td></tr>
             <tr><td style={{ whiteSpace: "nowrap" }}><Icon n="user" /> Owner</td><td className="text-muted">Buy and renew licenses, and resign once per license for a refund. One license per type per wallet; after resigning you can come back by renewing, not by buying again.</td></tr>
           </tbody>
@@ -234,10 +234,10 @@ export function ForIssuers() {
             title="You receive when claiming"
             rows={[
               ["Escrow released", "10.000000"],
-              ["Operation fee (0.1%)", "− 0.010000"],
+              ["Operation fee (1%)", "− 0.100000"],
               ["Network fee for the claim", "− 0.000005"],
             ]}
-            total={["You receive", "≈ 9.989995 SOL"]}
+            total={["You receive", "≈ 9.899995 SOL"]}
           />
           <Ledger
             title="Your one-time costs"

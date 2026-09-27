@@ -19,7 +19,7 @@ pub const MAX_NAME_LEN: u16= 64;
 pub const MAX_DESC_LEN: u16 = 256;
 
 #[constant]
-pub const FEE_BPS: u16 = 10;
+pub const FEE_BPS: u16 = 100;
 
 #[constant]
 pub const ISSUER_FEE_LAMPORTS: u64 = 1_000_000_000;

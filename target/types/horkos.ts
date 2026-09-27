@@ -822,53 +822,6 @@ export type Horkos = {
       ]
     },
     {
-      "name": "updateFee",
-      "discriminator": [
-        232,
-        253,
-        195,
-        247,
-        148,
-        212,
-        73,
-        222
-      ],
-      "accounts": [
-        {
-          "name": "master",
-          "signer": true,
-          "relations": [
-            "config"
-          ]
-        },
-        {
-          "name": "config",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  99,
-                  111,
-                  110,
-                  102,
-                  105,
-                  103
-                ]
-              }
-            ]
-          }
-        }
-      ],
-      "args": [
-        {
-          "name": "feeBps",
-          "type": "u16"
-        }
-      ]
-    },
-    {
       "name": "updateIssuer",
       "discriminator": [
         9,
@@ -1321,7 +1274,7 @@ export type Horkos = {
     {
       "name": "feeBps",
       "type": "u16",
-      "value": "10"
+      "value": "100"
     },
     {
       "name": "issuerFeeLamports",
