@@ -42,8 +42,10 @@ jobs:
           install -m 600 /dev/null ~/.ssh/deploy_key
           printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/deploy_key
           export GIT_SSH_COMMAND="ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"
-          git init -q -b main
+          git clone -q --depth 1 git@github.com:horkos-app/horkos-app.github.io.git "$RUNNER_TEMP/site"
+          mv "$RUNNER_TEMP/site/.git" .
+          git checkout HEAD -- tictactoe 2>/dev/null || true
           git add -A
-          git -c user.name=github-actions -c user.email=github-actions@users.noreply.github.com commit -qm "site ${GITHUB_SHA}"
-          git push -f git@github.com:horkos-app/horkos-app.github.io.git main
+          git diff --cached --quiet || git -c user.name=github-actions -c user.email=github-actions@users.noreply.github.com commit -qm "site ${GITHUB_SHA}"
+          git push origin main
           rm -f ~/.ssh/deploy_key
