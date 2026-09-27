@@ -86,10 +86,16 @@ export function Types({ ctx }: { ctx: Ctx }) {
                 <span><Icon n="arrow-counter-clockwise" /> {t.resign ? span(t.resign) + " refund window" : "No refunds"}</span>
                 <span><Icon n="coins" /> {sol(ls.reduce((a, l) => a + l.paid, 0))} SOL in escrow</span>
               </div>
-              <button className="btn btn-secondary" style={{ alignSelf: "flex-start" }} onClick={() => ctx.go("editor", t.pda.toBase58())} disabled={!iss.active}>
-                <Icon n="pencil-simple" />
-                Edit
-              </button>
+              <div style={{ display: "flex", gap: "var(--space-2)" }}>
+                <button className="btn btn-secondary" onClick={() => ctx.go("editor", t.pda.toBase58())} disabled={!iss.active}>
+                  <Icon n="pencil-simple" />
+                  Edit
+                </button>
+                <button className="btn btn-secondary mono" title="Copy license type address" onClick={() => navigator.clipboard.writeText(t.pda.toBase58())}>
+                  <Icon n="copy" />
+                  {short(t.pda)}
+                </button>
+              </div>
             </div>
           );
         })}
