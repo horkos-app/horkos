@@ -259,13 +259,12 @@ export function ForIssuers() {
   );
 }
 
-const Lang = ({ name, icon, install, code }: { name: string; icon: string; install: string; code: string }) => (
+const Lang = ({ name, icon, code }: { name: string; icon: string; code: string }) => (
   <div className="card elev-sm" style={{ padding: "var(--space-6)", gap: "var(--space-3)", minWidth: 0 }}>
     <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
       <img src={`https://cdn.jsdelivr.net/npm/devicon@2/icons/${icon}.svg`} alt="" width={28} height={28} style={icon.startsWith("rust") ? { filter: "invert(1)" } : undefined} />
       <div className="card-title">{name}</div>
     </div>
-    <div className="mono text-muted" style={{ fontSize: 12 }}>{install}</div>
     <Code>{code}</Code>
   </div>
 );
@@ -279,11 +278,10 @@ export function DevDocs() {
       sub={<>Everything lives in program <span className="mono" style={{ fontSize: 14 }}>{pid}</span>. There's no API to call — derive the address, read the account, compare the expiry.</>}
     >
       <Section title="Check a license" sub='The License account is a PDA of ["license", license type, owner wallet]. expires_at is a little-endian i64 Unix timestamp at byte offset 96.'>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(420px,100%),1fr))", gridAutoRows: "1fr", gap: "var(--space-6)" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-6)" }}>
           <Lang
             name="Rust"
             icon="rust/rust-original"
-            install="cargo add solana-client solana-sdk"
             code={`use solana_client::rpc_client::RpcClient;
 use solana_sdk::{pubkey, pubkey::Pubkey};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -307,13 +305,11 @@ pub fn has_license(rpc: &RpcClient, license_type: &Pubkey, owner: &Pubkey) -> bo
           <Lang
             name="Go"
             icon="go/go-original-wordmark"
-            install="go get github.com/gagliardetto/solana-go"
             code={`import (
 	"context"
 	"encoding/binary"
 	"errors"
 	"time"
-
 	"github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
 )
@@ -343,7 +339,6 @@ func HasLicense(ctx context.Context, client *rpc.Client, licenseType, owner sola
           <Lang
             name="TypeScript"
             icon="typescript/typescript-original"
-            install="npm i @solana/web3.js"
             code={`import { Connection, PublicKey } from "@solana/web3.js";
 
 const PROGRAM_ID = new PublicKey("${pid}");
@@ -363,7 +358,6 @@ export async function hasLicense(conn: Connection, licenseType: PublicKey, owner
           <Lang
             name="Java"
             icon="java/java-original"
-            install="Maven: com.mmorrell:solanaj"
             code={`import org.p2p.solanaj.core.PublicKey;
 import org.p2p.solanaj.rpc.RpcClient;
 import org.p2p.solanaj.rpc.types.AccountInfo;
