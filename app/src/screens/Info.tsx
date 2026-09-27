@@ -252,7 +252,7 @@ const ACCOUNTS: [string, string, string, string][] = [
 ];
 
 const IXS: [string, string, string][] = [
-  ["init_config", "anyone (once)", "Creates Config and makes the signer master."],
+  ["init_config", "upgrade authority (once)", "Creates Config and makes the signer master."],
   ["update_config(issuer_fee_lamports)", "master", "Sets the issuer fee."],
   ["purchase_issuer(name)", "anyone", "Pays the issuer fee to master and creates an active Issuer for the signer. The name can't be changed later."],
   ["update_issuer(active)", "master", "Revokes or restores an issuer."],

@@ -26,6 +26,8 @@ const seed = (s: string) => new TextEncoder().encode(s);
 const pda = (seeds: Uint8Array[]) => PublicKey.findProgramAddressSync(seeds, PROGRAM_ID)[0];
 
 export const configPda = () => pda([seed("config")]);
+export const programDataPda = () =>
+  PublicKey.findProgramAddressSync([PROGRAM_ID.toBytes()], new PublicKey("BPFLoaderUpgradeab1e11111111111111111111111"))[0];
 export const issuerPda = (wallet: PublicKey) => pda([seed("issuer"), wallet.toBytes()]);
 export const typePda = (issuer: PublicKey, id: BN) => pda([seed("type"), issuer.toBytes(), Uint8Array.from(id.toArray("le", 8))]);
 export const licensePda = (type: PublicKey, owner: PublicKey) => pda([seed("license"), type.toBytes(), owner.toBytes()]);

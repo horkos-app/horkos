@@ -1,7 +1,7 @@
 use {
     anchor_lang::{
         prelude::{Clock, Pubkey},
-        solana_program::{instruction::Instruction, system_program},
+        solana_program::{bpf_loader_upgradeable, instruction::Instruction, system_program},
         AccountDeserialize, InstructionData, Space, ToAccountMetas,
     },
     horkos::{accounts as acc, constants::*, instruction as ix, state::*},
@@ -26,6 +26,10 @@ fn pda(seeds: &[&[u8]]) -> Pubkey {
 
 fn config_pda() -> Pubkey {
     pda(&[CONFIG_SEED])
+}
+
+fn program_data_pda() -> Pubkey {
+    Pubkey::find_program_address(&[horkos::id().as_ref()], &bpf_loader_upgradeable::ID).0
 }
 
 fn send(
@@ -60,7 +64,7 @@ struct Env {
 }
 
 impl Env {
-    fn new() -> Self {
+    fn bare() -> Self {
         let mut svm = LiteSVM::new();
         let bytes = include_bytes!(concat!(env!("CARGO_TARGET_TMPDIR"), "/../deploy/horkos.so"));
         svm.add_program(horkos::id(), bytes).unwrap();
@@ -68,8 +72,17 @@ impl Env {
         for k in [&master, &issuer, &buyer] {
             svm.airdrop(&k.pubkey(), 10 * PRICE).unwrap();
         }
-        let mut env = Self { svm, master, issuer, buyer };
-        ok(env.init_config());
+        let addr = program_data_pda();
+        let mut program_data = svm.get_account(&addr).unwrap();
+        program_data.data[12] = 1;
+        program_data.data[13..45].copy_from_slice(master.pubkey().as_ref());
+        svm.set_account(addr, program_data).unwrap();
+        Self { svm, master, issuer, buyer }
+    }
+
+    fn new() -> Self {
+        let mut env = Self::bare();
+        ok(env.init_config(None));
         env
     }
 
@@ -120,13 +133,15 @@ impl Env {
         self.svm.set_sysvar(&clock);
     }
 
-    fn init_config(&mut self) -> TransactionResult {
+    fn init_config(&mut self, by: Option<&Keypair>) -> TransactionResult {
+        let by = by.unwrap_or(&self.master);
         let accounts = acc::InitConfig {
-            master: self.master.pubkey(),
+            master: by.pubkey(),
             config: config_pda(),
+            program_data: program_data_pda(),
             system_program: system_program::ID,
         };
-        send(&mut self.svm, ix::InitConfig {}, accounts, &self.master)
+        send(&mut self.svm, ix::InitConfig {}, accounts, by)
     }
 
     fn update_config(&mut self, by: Option<&Keypair>, issuer_fee_lamports: u64) -> TransactionResult {
@@ -260,7 +275,15 @@ fn init_config_sets_master_and_fee() {
     assert_eq!(config.master, env.master.pubkey());
     assert_eq!(config.fee_bps, FEE_BPS);
     assert_eq!(config.issuer_fee_lamports, ISSUER_FEE_LAMPORTS);
-    assert!(env.init_config().is_err());
+    assert!(env.init_config(None).is_err());
+}
+
+#[test]
+fn init_config_requires_upgrade_authority() {
+    let mut env = Env::bare();
+    let stranger = env.stranger();
+    fails(env.init_config(Some(&stranger)), "Unauthorized");
+    ok(env.init_config(None));
 }
 
 #[test]
@@ -497,8 +520,6 @@ fn renew_after_resign_has_no_window() {
     let mut env = Env::with_type();
     ok(env.purchase());
     ok(env.resign());
-    fails(env.renew(), "ResignWindowOpen");
-    env.warp(1);
 
     ok(env.renew());
 

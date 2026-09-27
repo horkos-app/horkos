@@ -1,6 +1,6 @@
-use anchor_lang::prelude::*;
+use anchor_lang::{prelude::*, solana_program::bpf_loader_upgradeable};
 
-use crate::{constants::*, state::Config};
+use crate::{constants::*, error::ErrorCode, state::Config};
 
 #[derive(Accounts)]
 pub struct InitConfig<'info> {
@@ -14,6 +14,13 @@ pub struct InitConfig<'info> {
         bump
     )]
     pub config: Account<'info, Config>,
+    #[account(
+        seeds = [crate::ID.as_ref()],
+        bump,
+        seeds::program = bpf_loader_upgradeable::ID,
+        constraint = program_data.upgrade_authority_address == Some(master.key()) @ ErrorCode::Unauthorized
+    )]
+    pub program_data: Account<'info, ProgramData>,
     pub system_program: Program<'info, System>,
 }
 
