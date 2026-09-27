@@ -1,3 +1,5 @@
+// One module per instruction. Glob re-exports make the `Accounts` structs visible
+// at crate root, which `#[program]` in lib.rs needs (`Context<InitConfig>` etc.).
 pub mod claim;
 pub mod create_license_type;
 pub mod init_config;

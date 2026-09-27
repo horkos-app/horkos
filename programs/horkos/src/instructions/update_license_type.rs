@@ -7,6 +7,9 @@ use crate::{
     state::{Issuer, LicenseType},
 };
 
+// Issuer edits a product. Changes apply to future purchases/renewals only;
+// existing licenses keep their `paid`, `expires_at` and `resign_deadline`.
+// Account size is fixed at max_len, so longer strings never need a realloc.
 #[derive(Accounts)]
 pub struct UpdateLicenseType<'info> {
     pub authority: Signer<'info>,
@@ -17,6 +20,8 @@ pub struct UpdateLicenseType<'info> {
         constraint = issuer.active @ ErrorCode::IssuerInactive
     )]
     pub issuer: Account<'info, Issuer>,
+    // `has_one = issuer`: the product must belong to the signer's Issuer,
+    // so one issuer can't edit another's products.
     #[account(
         mut,
         seeds = [LICENSE_TYPE_SEED, issuer.key().as_ref(), &license_type.id.to_le_bytes()],

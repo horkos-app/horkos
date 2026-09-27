@@ -1,5 +1,9 @@
 use anchor_lang::prelude::*;
 
+// Custom program errors. Anchor numbers them from 6000 upward in declaration order
+// (Unauthorized = 6000, IssuerInactive = 6001, ...), so only append new variants at
+// the end or client-side error codes will shift.
+// Used as `require!(cond, ErrorCode::X)` or `constraint = cond @ ErrorCode::X`.
 #[error_code]
 pub enum ErrorCode {
     #[msg("Signer is not authorized for this action")]
