@@ -1,9 +1,42 @@
+import { useEffect, useState } from "react";
 import { WalletReadyState } from "@solana/wallet-adapter-base";
-import { useWallet } from "@solana/wallet-adapter-react";
-import { initials } from "../format";
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import type { Connection } from "@solana/web3.js";
+import { DAY, fetchChain, makeProgram } from "../chain";
+import { initials, period, short, sol, span } from "../format";
 import { Icon } from "../ui";
 
+type Popular = { issuer: string; name: string; desc: string; price: number; duration: number; resign: number; holders: number; pda: string };
+
+const SAMPLE: Popular[] = [
+  { issuer: "Arcwise Labs", name: "Arcwise IDE Pro", desc: "Full IDE license with cloud sync and priority support.", price: 2.4e9, duration: 365 * DAY, resign: 14 * DAY, holders: 128, pda: "Lc7d0000Pq2e" },
+  { issuer: "Northbeam Software", name: "Northbeam Sync", desc: "", price: 0.5e9, duration: 30 * DAY, resign: 0, holders: 64, pda: "Nb3k0000Xw9a" },
+];
+
+async function loadPopular(connection: Connection): Promise<Popular[]> {
+  const chain = await fetchChain(makeProgram(connection));
+  const now = Date.now() / 1000;
+  const issuers = new Map(chain.issuers.map((i) => [i.pda.toBase58(), i]));
+  return chain.types
+    .flatMap((t) => {
+      const iss = issuers.get(t.issuer.toBase58());
+      if (!t.active || !iss?.active) return [];
+      const holders = chain.licenses.filter((l) => l.type.equals(t.pda) && l.expiresAt > now).length;
+      return [{ ...t, issuer: iss.name || short(iss.authority), holders, pda: t.pda.toBase58() }];
+    })
+    .sort((a, b) => b.holders - a.holders)
+    .slice(0, 2);
+}
+
 export function Connect() {
+  const { connection } = useConnection();
+  const [popular, setPopular] = useState(SAMPLE);
+  useEffect(() => {
+    loadPopular(connection)
+      .then((p) => p.length && setPopular(p))
+      .catch(() => {});
+  }, [connection]);
+  const [front, back] = popular;
   const { wallets, select, wallet, connecting } = useWallet();
   const usable = wallets.filter((w) => w.readyState === WalletReadyState.Installed || w.readyState === WalletReadyState.Loadable);
   return (
@@ -51,34 +84,27 @@ export function Connect() {
         </div>
       </div>
       <div style={{ position: "relative", display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
-        <div className="card elev-md" style={{ padding: "var(--space-6)", gap: "var(--space-4)", transform: "rotate(-2deg) translateX(24px)", opacity: 0.55, width: "92%", minHeight: 172 }}>
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <span className="card-kicker">Northbeam Software</span>
-            <span className="tag tag-neutral">Expired</span>
+        {back && (
+          <div className="card elev-md" style={{ padding: "var(--space-6)", gap: "var(--space-4)", transform: "rotate(-2deg) translateX(24px)", opacity: 0.55, width: "92%", minHeight: 172 }}>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <span className="card-kicker">{back.issuer}</span>
+              <span className="tag tag-neutral">{back.holders} active</span>
+            </div>
+            <div className="card-title">{back.name}</div>
+            <div style={{ height: 6, borderRadius: 3, background: "var(--color-neutral-800)" }} />
           </div>
-          <div className="card-title">Northbeam Sync</div>
-          <div style={{ height: 6, borderRadius: 3, background: "var(--color-neutral-800)" }} />
-        </div>
+        )}
         <div className="card elev-lg" style={{ padding: "var(--space-8)", gap: "var(--space-4)", minHeight: 330 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span className="card-kicker">Arcwise Labs</span>
-            <span className="tag tag-accent">Refundable · 8 days</span>
+            <span className="card-kicker">{front.issuer}</span>
+            <span className="tag tag-accent">{front.holders} active licenses</span>
           </div>
-          <div className="card-title" style={{ fontSize: 24 }}>Arcwise IDE Pro</div>
+          <div className="card-title" style={{ fontSize: 24 }}>{front.name}</div>
+          {front.desc && <p className="card-body" style={{ margin: 0 }}>{front.desc}</p>}
           <div style={{ display: "flex", gap: "var(--space-8)", fontSize: 13 }}>
-            <div><div className="text-muted" style={{ fontSize: 11 }}>Paid</div><div>2.40 SOL</div></div>
-            <div><div className="text-muted" style={{ fontSize: 11 }}>Expires</div><div>Sep 20, 2027</div></div>
-            <div><div className="text-muted" style={{ fontSize: 11 }}>Account</div><div className="mono">Lc7d…Pq2e</div></div>
-          </div>
-          <div style={{ position: "relative", height: 6, borderRadius: 3, background: "var(--color-neutral-800)", marginTop: "var(--space-2)" }}>
-            <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "18%", borderRadius: 3, background: "var(--color-accent-700)" }} />
-            <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "6%", borderRadius: 3, background: "var(--color-accent)" }} />
-            <div style={{ position: "absolute", left: "6%", top: -5, width: 2, height: 16, background: "var(--color-text)", borderRadius: 1 }} />
-          </div>
-          <div className="text-muted" style={{ display: "flex", justifyContent: "space-between", fontSize: 11 }}>
-            <span>Purchased Sep 20</span>
-            <span>Refund until Oct 4</span>
-            <span>Expires Sep 20, 2027</span>
+            <div><div className="text-muted" style={{ fontSize: 11 }}>Price</div><div>{sol(front.price)} SOL / {period(front.duration)}</div></div>
+            <div><div className="text-muted" style={{ fontSize: 11 }}>Refund window</div><div>{front.resign ? span(front.resign) : "None"}</div></div>
+            <div><div className="text-muted" style={{ fontSize: 11 }}>Account</div><div className="mono">{short(front.pda)}</div></div>
           </div>
         </div>
         <div className="text-muted" style={{ display: "flex", gap: "var(--space-8)", fontSize: 12, padding: "0 var(--space-2)" }}>
